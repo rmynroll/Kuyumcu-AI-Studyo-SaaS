@@ -6,10 +6,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kuyumcu_flutter/api_exception.dart';
 import 'package:kuyumcu_flutter/auth_interceptor.dart';
-import 'package:kuyumcu_flutter/dashboard_screens.dart';
-import 'package:kuyumcu_flutter/error_interceptor.dart';
+import 'package:kuyumcu_flutter/logging_interceptor.dart';
 import 'package:kuyumcu_flutter/logging_interceptors.dart';
-import 'package:kuyumcu_flutter/secure_storage_service.dart';
+
 
 
 /// Go backend API'sine bağlanan tek merkezi Dio istemcisi.
@@ -132,6 +131,25 @@ class ApiClient {
       throw ApiException.fromDioException(e);
     }
   }
+}
+
+class ErrorInterceptor extends Interceptor {
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    // Let other interceptors or callers handle the error; keep signature
+    // compatible with Dio's Interceptor so it can be added to interceptors list.
+    handler.next(err);
+  }
+}
+
+class SecureStorageService {
+  Future<void> clear() async {}
+
+  Future<Object?> readAccessToken() async {}
+
+  Future<void> saveTokens({required String accessToken, required refreshToken}) async {}
+
+  Future<Object?> readRefreshToken() async {}
 }
 
 /// Uygulama genelinde tek bir `ApiClient` örneği paylaşılır.

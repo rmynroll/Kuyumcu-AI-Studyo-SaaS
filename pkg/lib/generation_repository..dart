@@ -2,14 +2,11 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kuyumcu_flutter/api_client.dart';
 import 'package:kuyumcu_flutter/api_exception.dart';
 import 'package:kuyumcu_flutter/auth_interceptor.dart';
-import 'package:kuyumcu_flutter/dashboard_screens.dart';
-import 'package:kuyumcu_flutter/error_interceptor.dart';
+import 'package:kuyumcu_flutter/logging_interceptor.dart';
 import 'package:kuyumcu_flutter/logging_interceptors.dart';
-import 'package:kuyumcu_flutter/secure_storage_service.dart';
-
-
 
 /// Go backend API'sine bağlanan tek merkezi Dio istemcisi.
 ///

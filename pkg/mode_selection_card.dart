@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import '../../api_exception.dart';
+import 'package:kuyumcu_flutter/api_exception.dart';
 
 /// Ham `DioException`'ı, uygulamanın her yerinde tutarlı biçimde
 /// kullanılan `ApiException`'a (sade, kuyumcu-dostu mesajlı) çevirir.

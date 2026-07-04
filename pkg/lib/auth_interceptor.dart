@@ -1,8 +1,7 @@
 
 import 'package:dio/dio.dart';
+import 'package:kuyumcu_flutter/api_client.dart';
 import 'package:kuyumcu_flutter/logging_interceptors.dart';
-import 'package:kuyumcu_flutter/secure_storage_service.dart';
-
 /// Her isteğe `Authorization: Bearer <token>` header'ı ekler.
 ///
 /// 401 (token süresi dolmuş) alındığında `refresh` endpoint'i ile tek
@@ -87,4 +86,8 @@ class AuthInterceptor extends QueuedInterceptor {
       return handler.next(err);
     }
   }
+}
+
+extension on Object {
+  bool get isNotEmpty => this is String && (this as String).isNotEmpty;
 }

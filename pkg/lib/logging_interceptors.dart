@@ -46,4 +46,8 @@ class ApiConstants {
   /// Bir generation'ın "asıldı" kabul edileceği ve kullanıcıya sade bir
   /// hata mesajı gösterileceği maksimum bekleme süresi.
   static const Duration generationPollTimeout = Duration(minutes: 3);
+
+  static String? get templateCategories => null;
+
+  static String templatesByCategory(String categoryId) => '/templates/categories/$categoryId';
 }

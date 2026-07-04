@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:kuyumcu_flutter/secure_storage_service.dart';
+import 'package:kuyumcu_flutter/api_client.dart';
+
 
 
 /// Her isteğe `Authorization: Bearer <token>` header'ı ekler.
@@ -86,4 +87,8 @@ class AuthInterceptor extends QueuedInterceptor {
       return handler.next(err);
     }
   }
+}
+
+extension on Object {
+  bool get isNotEmpty => this is String && (this as String).isNotEmpty;
 }

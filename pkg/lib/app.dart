@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:kuyumcu_flutter/app_theme..dart';
+import 'package:kuyumcu_flutter/router.dart';
 
-import '../router.dart';
+import 'app_theme.dart';
 
 class KuyumcuApp extends ConsumerWidget {
   const KuyumcuApp({super.key});

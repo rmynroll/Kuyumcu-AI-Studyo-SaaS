@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kuyumcu_flutter/app_colors.dart';
 import 'package:kuyumcu_flutter/api_exception.dart';
+import 'package:kuyumcu_flutter/app_colors.dart';
 import 'package:kuyumcu_flutter/generation.dart';
 import 'package:kuyumcu_flutter/generation_polling_service.dart';
 
