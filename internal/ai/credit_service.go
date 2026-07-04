@@ -11,7 +11,7 @@
 // `SELECT ... FOR UPDATE` ile kilitlenerek yapılır; bu, aynı firmanın
 // eşzamanlı iki generation isteğinin bakiyeyi yarış durumunda (race
 // condition) yanlış düşürmesini engeller.
-package credits
+package ai
 
 import (
 	"context"
@@ -20,14 +20,14 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-
-	"kuyumcu-backend/internal/ai"
 )
 
 // Service, `ai.CreditService` arayüzünü implemente eder.
 type Service struct {
 	db *pgxpool.Pool
 }
+
+var ErrInsufficientCredit = errors.New("insufficient credit")
 
 func NewService(db *pgxpool.Pool) *Service {
 	return &Service{db: db}
@@ -79,9 +79,9 @@ func (s *Service) Reserve(ctx context.Context, companyID, generationID string, a
 
 	if currentBalance < amount {
 		// Kalıcı hata: internal/ai/credit.go bu sentinel değeri
-		// service.go'da `err == ai.ErrInsufficientCredit` ile
+		// service.go'da `err == ErrInsufficientCredit` ile
 		// karşılaştırıp kullanıcıya sade mesaj gösteriyor.
-		return ai.ErrInsufficientCredit
+		return ErrInsufficientCredit
 	}
 
 	if _, err := tx.Exec(ctx,

@@ -26,10 +26,10 @@ type FluxProGenerationProvider struct {
 func NewFluxProGenerationProvider(apiKey string, config *ProviderConfig) *FluxProGenerationProvider {
 	if config == nil {
 		config = &ProviderConfig{
-			Type:           ProviderTypeFalAI,
-			BaseURL:        "https://api.fal.ai/v1",
-			Timeout:        120 * time.Second,
-			RetryPolicy:    DefaultRetryPolicy(),
+			Type:        ProviderTypeFalAI,
+			BaseURL:     "https://api.fal.ai/v1",
+			Timeout:     120 * time.Second,
+			RetryPolicy: DefaultRetryPolicy(),
 		}
 	}
 
@@ -82,7 +82,7 @@ func (f *FluxProGenerationProvider) GenerateImage(
 	prompt string,
 	params map[string]interface{},
 ) (json.RawMessage, error) {
-	
+
 	payload := map[string]interface{}{
 		"prompt":              prompt,
 		"num_outputs":         getIntParam(params, "num_outputs", 1),
@@ -105,7 +105,7 @@ func (f *FluxProGenerationProvider) CompositeImage(
 	ctx context.Context,
 	req *CompositingRequest,
 ) (*CompositingResult, error) {
-	
+
 	payload := map[string]interface{}{
 		"product_mask_url":     req.ProductMaskURL,
 		"original_product_url": req.OriginalProductURL,
@@ -139,17 +139,17 @@ func (f *FluxProGenerationProvider) GenerateWithCompositing(
 	productURL string,
 	prompt string,
 ) (*CompositingResult, error) {
-	
+
 	// Compositing-first payload
 	payload := map[string]interface{}{
-		"method":               "compositing_first",
-		"product_mask":         productMask,
-		"product_image":        productURL,
-		"generation_prompt":    prompt,
-		"preserve_product":     true,
-		"auto_relighting":      true,
-		"blend_mode":           "seamless",
-		"edge_enhancement":     true,
+		"method":            "compositing_first",
+		"product_mask":      productMask,
+		"product_image":     productURL,
+		"generation_prompt": prompt,
+		"preserve_product":  true,
+		"auto_relighting":   true,
+		"blend_mode":        "seamless",
+		"edge_enhancement":  true,
 	}
 
 	resp, err := f.callGenerationAPI(ctx, "/generate-with-compositing", payload)
@@ -179,8 +179,8 @@ func (f *FluxProGenerationProvider) callGenerationAPI(
 	endpoint string,
 	payload interface{},
 ) (json.RawMessage, error) {
-	
-	payloadJSON, err := json.Marshal(payload)
+
+	_, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("payload encoding hatası: %w", err)
 	}
@@ -188,7 +188,7 @@ func (f *FluxProGenerationProvider) callGenerationAPI(
 	var lastErr error
 	for attempt := 0; attempt <= f.retryPolicy.MaxRetries; attempt++ {
 		if attempt > 0 {
-			backoff := time.Duration(float64(f.retryPolicy.InitialBackoff) * 
+			backoff := time.Duration(float64(f.retryPolicy.InitialBackoff) *
 				(f.retryPolicy.BackoffExponent * float64(attempt)))
 			if backoff > f.retryPolicy.MaxBackoff {
 				backoff = f.retryPolicy.MaxBackoff
@@ -255,10 +255,10 @@ type StableDiffusion3GenerationProvider struct {
 func NewStableDiffusion3GenerationProvider(apiKey string, config *ProviderConfig) *StableDiffusion3GenerationProvider {
 	if config == nil {
 		config = &ProviderConfig{
-			Type:           ProviderTypeReplicate,
-			BaseURL:        "https://api.replicate.com/v1",
-			Timeout:        120 * time.Second,
-			RetryPolicy:    DefaultRetryPolicy(),
+			Type:        ProviderTypeReplicate,
+			BaseURL:     "https://api.replicate.com/v1",
+			Timeout:     120 * time.Second,
+			RetryPolicy: DefaultRetryPolicy(),
 		}
 	}
 
@@ -294,13 +294,13 @@ func (s *StableDiffusion3GenerationProvider) GenerateImage(
 	prompt string,
 	params map[string]interface{},
 ) (json.RawMessage, error) {
-	
+
 	payload := map[string]interface{}{
-		"prompt":             prompt,
-		"output_count":       getIntParam(params, "num_outputs", 1),
-		"output_format":      "png",
-		"guidance_scale":     getFloatParam(params, "guidance_scale", 7.5),
-		"negative_prompt":    getStringParam(params, "negative_prompt", ""),
+		"prompt":          prompt,
+		"output_count":    getIntParam(params, "num_outputs", 1),
+		"output_format":   "png",
+		"guidance_scale":  getFloatParam(params, "guidance_scale", 7.5),
+		"negative_prompt": getStringParam(params, "negative_prompt", ""),
 	}
 
 	return s.callGenerationAPI(ctx, "/predictions", payload)
@@ -311,7 +311,7 @@ func (s *StableDiffusion3GenerationProvider) CompositeImage(
 	ctx context.Context,
 	req *CompositingRequest,
 ) (*CompositingResult, error) {
-	
+
 	return nil, fmt.Errorf("compositing currently not supported for SD3")
 }
 
@@ -322,7 +322,7 @@ func (s *StableDiffusion3GenerationProvider) GenerateWithCompositing(
 	productURL string,
 	prompt string,
 ) (*CompositingResult, error) {
-	
+
 	return nil, fmt.Errorf("compositing currently not supported for SD3")
 }
 
@@ -340,8 +340,8 @@ func (s *StableDiffusion3GenerationProvider) callGenerationAPI(
 	endpoint string,
 	payload interface{},
 ) (json.RawMessage, error) {
-	
-	payloadJSON, err := json.Marshal(payload)
+
+	_, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
@@ -459,7 +459,7 @@ func (m *MockGenerationProvider) GenerateImage(
 	prompt string,
 	params map[string]interface{},
 ) (json.RawMessage, error) {
-	
+
 	result := map[string]interface{}{
 		"images": []string{
 			"https://example.com/generated_1.png",
@@ -475,14 +475,14 @@ func (m *MockGenerationProvider) CompositeImage(
 	ctx context.Context,
 	req *CompositingRequest,
 ) (*CompositingResult, error) {
-	
+
 	return &CompositingResult{
-		CompositeImageURL:  "https://example.com/composited.png",
-		CompositeThumbURL:  "https://example.com/composited_thumb.png",
-		BlendQualityScore:  0.95,
-		EdgeArtifactScore:  0.05,
+		CompositeImageURL:   "https://example.com/composited.png",
+		CompositeThumbURL:   "https://example.com/composited_thumb.png",
+		BlendQualityScore:   0.95,
+		EdgeArtifactScore:   0.05,
 		LightingConsistency: 0.92,
-		ProcessedAt:        time.Now(),
+		ProcessedAt:         time.Now(),
 	}, nil
 }
 
@@ -493,7 +493,7 @@ func (m *MockGenerationProvider) GenerateWithCompositing(
 	productURL string,
 	prompt string,
 ) (*CompositingResult, error) {
-	
+
 	return m.CompositeImage(ctx, &CompositingRequest{})
 }
 

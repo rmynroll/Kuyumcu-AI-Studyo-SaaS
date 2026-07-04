@@ -36,10 +36,10 @@ func NewFalAIProvider(apiKey string, modelID string, config *ProviderConfig) *Fa
 	}
 
 	return &FalAIProvider{
-		apiKey:     apiKey,
-		modelID:    modelID,
-		baseURL:    config.BaseURL,
-		config:     config,
+		apiKey:      apiKey,
+		modelID:     modelID,
+		baseURL:     config.BaseURL,
+		config:      config,
 		retryPolicy: config.RetryPolicy,
 		httpClient: &http.Client{
 			Timeout: config.Timeout,
@@ -97,7 +97,7 @@ func (f *FalAIProvider) AnalyzeImage(
 	imageURL string,
 	analysisType string,
 ) (json.RawMessage, error) {
-	
+
 	payload := map[string]interface{}{
 		"image_url":     imageURL,
 		"analysis_type": analysisType,
@@ -111,7 +111,7 @@ func (f *FalAIProvider) AnalyzeReferenceImage(
 	ctx context.Context,
 	imageURL string,
 ) (*ReferenceImageAnalysisResult, error) {
-	
+
 	payload := map[string]interface{}{
 		"image_url": imageURL,
 		"detailed":  true,
@@ -135,9 +135,9 @@ func (f *FalAIProvider) ExtractJewelryCharacteristics(
 	ctx context.Context,
 	imageURL string,
 ) (*JewelryCharacteristics, error) {
-	
+
 	payload := map[string]interface{}{
-		"image_url":  imageURL,
+		"image_url":   imageURL,
 		"extract_all": true,
 	}
 
@@ -164,7 +164,7 @@ func (f *FalAIProvider) Close() error {
 
 // callAPI, Fal.ai API'sine çağrı yapar
 func (f *FalAIProvider) callAPI(ctx context.Context, endpoint string, payload interface{}) (json.RawMessage, error) {
-	payloadJSON, err := json.Marshal(payload)
+	_, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("payload encoding hatası: %w", err)
 	}
@@ -173,7 +173,7 @@ func (f *FalAIProvider) callAPI(ctx context.Context, endpoint string, payload in
 	var lastErr error
 	for attempt := 0; attempt <= f.retryPolicy.MaxRetries; attempt++ {
 		if attempt > 0 {
-			backoff := time.Duration(float64(f.retryPolicy.InitialBackoff) * 
+			backoff := time.Duration(float64(f.retryPolicy.InitialBackoff) *
 				(f.retryPolicy.BackoffExponent * float64(attempt)))
 			if backoff > f.retryPolicy.MaxBackoff {
 				backoff = f.retryPolicy.MaxBackoff
@@ -260,10 +260,10 @@ func NewReplicateProvider(apiKey string, modelID string, config *ProviderConfig)
 	}
 
 	return &ReplicateProvider{
-		apiKey:     apiKey,
-		modelID:    modelID,
-		baseURL:    config.BaseURL,
-		config:     config,
+		apiKey:      apiKey,
+		modelID:     modelID,
+		baseURL:     config.BaseURL,
+		config:      config,
 		retryPolicy: config.RetryPolicy,
 		httpClient: &http.Client{
 			Timeout: config.Timeout,
@@ -321,10 +321,10 @@ func (r *ReplicateProvider) AnalyzeImage(
 	imageURL string,
 	analysisType string,
 ) (json.RawMessage, error) {
-	
+
 	payload := map[string]interface{}{
-		"image":          imageURL,
-		"analysis_type":  analysisType,
+		"image":         imageURL,
+		"analysis_type": analysisType,
 	}
 
 	return r.callAPI(ctx, "/predictions", payload)
@@ -335,7 +335,7 @@ func (r *ReplicateProvider) AnalyzeReferenceImage(
 	ctx context.Context,
 	imageURL string,
 ) (*ReferenceImageAnalysisResult, error) {
-	
+
 	payload := map[string]interface{}{
 		"image": imageURL,
 	}
@@ -358,7 +358,7 @@ func (r *ReplicateProvider) ExtractJewelryCharacteristics(
 	ctx context.Context,
 	imageURL string,
 ) (*JewelryCharacteristics, error) {
-	
+
 	payload := map[string]interface{}{
 		"image": imageURL,
 	}
@@ -386,14 +386,14 @@ func (r *ReplicateProvider) Close() error {
 
 // callAPI, Replicate API'sine çağrı yapar
 func (r *ReplicateProvider) callAPI(ctx context.Context, endpoint string, payload interface{}) (json.RawMessage, error) {
-	payloadJSON, err := json.Marshal(payload)
+	_, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("payload encoding hatası: %w", err)
 	}
 
 	for attempt := 0; attempt <= r.retryPolicy.MaxRetries; attempt++ {
 		if attempt > 0 {
-			backoff := time.Duration(float64(r.retryPolicy.InitialBackoff) * 
+			backoff := time.Duration(float64(r.retryPolicy.InitialBackoff) *
 				(r.retryPolicy.BackoffExponent * float64(attempt)))
 			if backoff > r.retryPolicy.MaxBackoff {
 				backoff = r.retryPolicy.MaxBackoff
@@ -463,16 +463,16 @@ type SAM2SegmentationProvider struct {
 func NewSAM2SegmentationProvider(apiKey string, config *ProviderConfig) *SAM2SegmentationProvider {
 	if config == nil {
 		config = &ProviderConfig{
-			Type:           ProviderTypeFalAI, // Fal.ai hosts SAM 2
-			Timeout:        30 * time.Second,
-			RetryPolicy:    DefaultRetryPolicy(),
+			Type:        ProviderTypeFalAI, // Fal.ai hosts SAM 2
+			Timeout:     30 * time.Second,
+			RetryPolicy: DefaultRetryPolicy(),
 		}
 	}
 
 	return &SAM2SegmentationProvider{
-		apiKey:     apiKey,
-		baseURL:    config.BaseURL,
-		config:     config,
+		apiKey:      apiKey,
+		baseURL:     config.BaseURL,
+		config:      config,
 		retryPolicy: config.RetryPolicy,
 		httpClient: &http.Client{
 			Timeout: config.Timeout,
@@ -500,7 +500,7 @@ func (s *SAM2SegmentationProvider) SegmentImage(
 	ctx context.Context,
 	imageURL string,
 ) (*SegmentationResult, error) {
-	
+
 	return s.SegmentJewelry(ctx, imageURL, map[string]interface{}{})
 }
 
@@ -510,15 +510,15 @@ func (s *SAM2SegmentationProvider) SegmentJewelry(
 	imageURL string,
 	params map[string]interface{},
 ) (*SegmentationResult, error) {
-	
+
 	payload := map[string]interface{}{
-		"image_url": imageURL,
-		"model":     "sam2",
+		"image_url":  imageURL,
+		"model":      "sam2",
 		"auto_masks": true,
-		"params":    params,
+		"params":     params,
 	}
 
-	payloadJSON, err := json.Marshal(payload)
+	_, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}

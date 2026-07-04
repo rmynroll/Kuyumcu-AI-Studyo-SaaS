@@ -66,7 +66,7 @@ func NewAIService(
 
 	// Analyzerand Segmentation services oluştur
 	visionAnalyzer := NewImageAnalyzerService(
-		visionProvider.(*ImageAnalyzerService),
+		visionProvider,
 		config.VisionConfig,
 		creditSvc,
 	)
@@ -237,14 +237,6 @@ func (as *AIService) ExecuteFullPipeline(
 
 	// Step 4: Generate images with AI model
 	as.logger.Info("Step 4: Generating scene with AI...")
-	
-	genParams := map[string]interface{}{
-		"prompt":         promptTemplate.BasePrompt,
-		"negative_prompt": promptTemplate.NegativePrompt,
-		"style_modifiers": promptTemplate.StyleModifiers,
-		"num_outputs":    req.OutputCount,
-		"quality":        req.Quality,
-	}
 
 	// Credit check for generation
 	genCreditCost := as.creditCalculator.CalculateGenerationCost(

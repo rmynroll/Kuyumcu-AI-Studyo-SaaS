@@ -48,19 +48,19 @@ type OperationRecord struct {
 
 // UsageStats, kredi kullanım istatistiklerini tutar
 type UsageStats struct {
-	CompanyID         string
-	TotalCredits      int
-	CreditsUsed       int
-	CreditsRemaining  int
-	Period            string
+	CompanyID          string
+	TotalCredits       int
+	CreditsUsed        int
+	CreditsRemaining   int
+	Period             string
 	OperationBreakdown map[string]int // operationType -> creditUsed
-	AnalysisCount     int
-	GenerationCount   int
-	SegmentationCount int
-	CompositingCount  int
-	TotalOperations   int
-	PeriodStart       time.Time
-	PeriodEnd         time.Time
+	AnalysisCount      int
+	GenerationCount    int
+	SegmentationCount  int
+	CompositingCount   int
+	TotalOperations    int
+	PeriodStart        time.Time
+	PeriodEnd          time.Time
 }
 
 // =============================================================================
@@ -97,15 +97,15 @@ type DefaultCreditCalculator struct {
 func NewDefaultCreditCalculator() *DefaultCreditCalculator {
 	return &DefaultCreditCalculator{
 		baseCosts: map[string]int{
-			"vision_analysis":           50,    // Vision model analizi
-			"reference_analysis":        75,    // Referans görsel analizi
-			"jewelry_extraction":        40,    // Takı özelliği çıkarma
-			"image_generation":          200,   // Tek görsel üretimi
-			"image_generation_batch":    350,   // 4-8 görsel üretimi
-			"segmentation":              100,   // SAM 2 segmentasyon
-			"compositing":               150,   // Tamamlama işlemi
-			"relighting":                120,   // Işık değiştirme
-			"full_pipeline":             500,   // Tam pipeline (analiz + üretim + compositing)
+			"vision_analysis":        50,  // Vision model analizi
+			"reference_analysis":     75,  // Referans görsel analizi
+			"jewelry_extraction":     40,  // Takı özelliği çıkarma
+			"image_generation":       200, // Tek görsel üretimi
+			"image_generation_batch": 350, // 4-8 görsel üretimi
+			"segmentation":           100, // SAM 2 segmentasyon
+			"compositing":            150, // Tamamlama işlemi
+			"relighting":             120, // Işık değiştirme
+			"full_pipeline":          500, // Tam pipeline (analiz + üretim + compositing)
 		},
 	}
 }
@@ -113,7 +113,7 @@ func NewDefaultCreditCalculator() *DefaultCreditCalculator {
 // CalculateAnalysisCost, vision analizi maliyetini hesaplar
 func (c *DefaultCreditCalculator) CalculateAnalysisCost(imageSize int, analysisType string) int {
 	baseCost := c.baseCosts["vision_analysis"]
-	
+
 	// İmaj boyutuna göre ayarlama
 	if imageSize > 10*1024*1024 { // > 10MB
 		baseCost = int(float32(baseCost) * 1.5)
@@ -145,7 +145,6 @@ func (c *DefaultCreditCalculator) CalculateGenerationCost(modelID string, imageC
 	case "512x512":
 		baseCost = int(float32(baseCost) * 0.8)
 	case "1024x1024":
-		baseCost = baseCost // default
 	case "1536x1536":
 		baseCost = int(float32(baseCost) * 1.5)
 	case "2048x2048":
@@ -189,7 +188,6 @@ func (c *DefaultCreditCalculator) CalculateCompositingCost(quality string, image
 	case "standard":
 		baseCost = int(float32(baseCost) * 0.8)
 	case "high":
-		baseCost = baseCost
 	case "ultra":
 		baseCost = int(float32(baseCost) * 1.5)
 	}
