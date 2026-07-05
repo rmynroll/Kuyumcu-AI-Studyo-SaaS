@@ -501,3 +501,14 @@ func (m *MockGenerationProvider) GenerateWithCompositing(
 func (m *MockGenerationProvider) Close() error {
 	return nil
 }
+
+type GenerationFeedback struct {
+	ID           string    `json:"id" db:"id"`
+	GenerationID string    `json:"generation_id" db:"generation_id"`
+	UserID       string    `json:"user_id" db:"user_id"`
+	Rating       int       `json:"rating" db:"rating"` // 1-5 arası
+	IssueType    string    `json:"issue_type" db:"issue_type"` // "stone_distorted", "color_wrong", "blur"
+	Comment      string    `json:"comment" db:"comment"`
+	NeedsReview  bool      `json:"needs_review" db:"needs_review"` // Admin paneline düşmesi için flag
+	CreatedAt    time.Time `json:"created_at" db:"created_at"`
+}

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // =============================================================================
@@ -443,4 +445,145 @@ func (m *MockVisionProvider) AnalyzeReferenceImage(ctx context.Context, img stri
 }
 func (m *MockVisionProvider) ExtractJewelryCharacteristics(ctx context.Context, img string) (*JewelryCharacteristics, error) {
 	return nil, nil
+}
+
+// =============================================================================
+// FEEDBACK SERVICE
+// =============================================================================
+
+// Package feedback, kullanıcının üretim sonrası verdiği geri
+// bildirimleri (`generation_feedback` tablosu) yönetir. Amaç sadece veri
+// toplamak değil; ÜRÜN KİMLİĞİ ihlali (taş sayısı, metal rengi değişimi
+// gibi) içeren geri bildirimleri estetik şikayetlerden (arka plan kötü
+// gibi) ayırıp admin'in ilk göreceği kuyruğa otomatik düşürmektir.
+
+
+// FeedbackCode, Flutter tarafındaki `ChoiceChip` seçenekleriyle birebir
+// eşleşir (bkz. feedback_bottom_sheet.dart).
+type FeedbackCode string
+
+const (
+	CodeProductBroken           FeedbackCode = "product_broken"
+	CodeStoneCountChanged       FeedbackCode = "stone_count_changed"
+	CodeMetalColorWrong         FeedbackCode = "metal_color_wrong"
+	CodeBackgroundBad           FeedbackCode = "background_bad"
+	CodeUnnaturalPlacement      FeedbackCode = "unnatural_placement"
+	CodeLooksGoodButNotSimilar  FeedbackCode = "looks_good_but_not_similar"
+)
+
+// criticalCodes, ÜRÜN KİMLİĞİ ihlali sayılan ve otomatik olarak
+// `is_flagged = true` ile admin kuyruğuna düşen kodlardır. Bunlar aynı
+// zamanda dokümandaki "ayıplı mal / yanıltıcı reklam" hukuki riskiyle
+// doğrudan ilişkilidir — estetik şikayetler (arka plan kötü vb.) admin'i
+// boğmasın diye bu ayrım yapılır.
+var criticalCodes = map[FeedbackCode]bool{
+	CodeProductBroken:     true,
+	CodeStoneCountChanged: true,
+	CodeMetalColorWrong:   true,
+}
+
+// allowedCodes, veritabanındaki CHECK constraint ile birebir eşleşir
+// (bkz. migration 0005); API handler'ı burada olmayan bir kod gelirse
+// isteği reddeder.
+var allowedCodes = map[FeedbackCode]bool{
+	CodeProductBroken:          true,
+	CodeStoneCountChanged:      true,
+	CodeMetalColorWrong:        true,
+	CodeBackgroundBad:          true,
+	CodeUnnaturalPlacement:     true,
+	CodeLooksGoodButNotSimilar: true,
+}
+
+// FeedbackService, feedback gönderme ve admin tarafında listeleme işlemlerini yürütür.
+type FeedbackService struct {
+	db *pgxpool.Pool
+}
+
+func NewFeedbackService(db *pgxpool.Pool) *FeedbackService {
+	return &FeedbackService{db: db}
+}
+
+// Submit, `POST /generations/{id}/feedback` handler'ının çağıracağı ana
+// metottur. `isFlagged` kararı burada, kod bazında otomatik verilir —
+// kullanıcı veya API çağıran bunu manipüle edemez.
+func (s *FeedbackService) Submit(ctx context.Context, generationID, companyID string, code FeedbackCode, note string) error {
+	if !allowedCodes[code] {
+		return fmt.Errorf("geçersiz feedback kodu: %s", code)
+	}
+
+	isFlagged := criticalCodes[code]
+
+	const query = `
+		INSERT INTO generation_feedback (generation_id, company_id, feedback_code, note, is_flagged)
+		VALUES ($1, $2, $3, $4, $5)
+	`
+	_, err := s.db.Exec(ctx, query, generationID, companyID, string(code), note, isFlagged)
+	if err != nil {
+		return fmt.Errorf("feedback kaydedilemedi: %w", err)
+	}
+	return nil
+}
+
+// FlaggedFeedback, admin panelinin incelemesi için dönen özet satırdır.
+type FlaggedFeedback struct {
+	ID           string
+	GenerationID string
+	CompanyID    string
+	FeedbackCode string
+	Note         *string
+	OutputURL    *string // generations.output_urls[0].file_url, admin görsel görsün
+	CreatedAt    string
+}
+
+// ListUnreviewedFlagged, admin panelinin "incelenmemiş + kritik" kuyruğunu
+// döner (bkz. migration 0005 idx_generation_feedback_unreviewed index'i).
+func (s *FeedbackService) ListUnreviewedFlagged(ctx context.Context, limit int) ([]FlaggedFeedback, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+
+	const query = `
+		SELECT
+			f.id, f.generation_id, f.company_id, f.feedback_code, f.note,
+			g.output_urls->0->>'file_url' AS output_url,
+			f.created_at::text
+		FROM generation_feedback f
+		JOIN generations g ON g.id = f.generation_id
+		WHERE f.reviewed_at IS NULL AND f.is_flagged = TRUE
+		ORDER BY f.created_at ASC
+		LIMIT $1
+	`
+
+	rows, err := s.db.Query(ctx, query, limit)
+	if err != nil {
+		return nil, fmt.Errorf("flagged feedback listesi okunamadı: %w", err)
+	}
+	defer rows.Close()
+
+	var results []FlaggedFeedback
+	for rows.Next() {
+		var f FlaggedFeedback
+		if err := rows.Scan(&f.ID, &f.GenerationID, &f.CompanyID, &f.FeedbackCode, &f.Note, &f.OutputURL, &f.CreatedAt); err != nil {
+			return nil, fmt.Errorf("flagged feedback satırı okunamadı: %w", err)
+		}
+		results = append(results, f)
+	}
+	return results, rows.Err()
+}
+
+// MarkReviewed, admin bir feedback'i inceledikten sonra çağrılır.
+func (s *Service) MarkReviewed(ctx context.Context, feedbackID, reviewerNote string) error {
+	const query = `
+		UPDATE generation_feedback
+		SET reviewed_at = now(), reviewer_note = $1
+		WHERE id = $2
+	`
+	tag, err := s.db.Exec(ctx, query, reviewerNote, feedbackID)
+	if err != nil {
+		return fmt.Errorf("feedback incelendi olarak işaretlenemedi: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("feedback bulunamadı (id=%s)", feedbackID)
+	}
+	return nil
 }

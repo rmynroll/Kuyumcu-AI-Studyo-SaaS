@@ -29,6 +29,13 @@ type CreditService interface {
 
 	// GetUsageStats, firma kullanım istatistiklerini döndürür
 	GetUsageStats(ctx context.Context, companyID string, period string) (*UsageStats, error)
+
+	// AddBalance, firma hesabına kredi ekler
+	AddBalance(ctx context.Context, companyID string, amount int, reason string) error
+}
+
+func AddBalance(ctx context.Context, d string, amount int, reason string) any {
+	panic("unimplemented")
 }
 
 // OperationRecord, kredi işlemi kaydını tutar

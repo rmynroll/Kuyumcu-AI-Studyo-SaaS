@@ -15,8 +15,10 @@ package ai
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -175,5 +177,61 @@ func (s *Service) Refund(ctx context.Context, generationID string, reason string
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("kredi iadesi commit edilemedi: %w", err)
 	}
+	return nil
+}
+
+var CreditCosts = map[string]int{
+	"white_background": 1,
+	"reference_image":  3,
+	"model_shoot":      2,
+}
+
+// Transaction tabanlı AI Üretim Fonksiyonu
+func ProcessAIGeneration(ctx context.Context, db *sql.DB, userID string, generationType string) error {
+	cost, exists := CreditCosts[generationType]
+	if !exists {
+		return errors.New("geçersiz üretim tipi")
+	}
+
+	// 1. Transaction başlat
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	// Hata anında otomatik rollback yapması için defer
+	defer tx.Rollback()
+
+	// 2. Kullanıcının kredisini kontrol et ve düş
+	var currentCredits int
+	err = tx.QueryRowContext(ctx, "SELECT credits FROM users WHERE id = $1 FOR UPDATE", userID).Scan(&currentCredits)
+	if err != nil || currentCredits < cost {
+		return errors.New("yetersiz bakiye veya kullanıcı bulunamadı")
+	}
+
+	_, err = tx.ExecContext(ctx, "UPDATE users SET credits = credits - $1 WHERE id = $2", cost, userID)
+	if err != nil {
+		return err
+	}
+
+	// 3. AI Servisine İsteği At (Simülasyon)
+	// ÖNEMLİ: Eğer Midjourney/Stable Diffusion buradan hata dönerse,
+	// fonksiyon err döndüreceği için defer tx.Rollback() çalışır ve kredi geri yatar.
+	aiErr := CallExternalAIService(generationType)
+	if aiErr != nil {
+		log.Printf("AI servisi patladı, kredi iade ediliyor: %v", aiErr)
+		return aiErr
+	}
+
+	// 4. Her şey başarılıysa işlemi kalıcı yap (Commit)
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CallExternalAIService(genType string) error {
+	// AI API çağrısı burada yapılacak.
+	// return errors.New("API Timeout") // Hata testi için
 	return nil
 }

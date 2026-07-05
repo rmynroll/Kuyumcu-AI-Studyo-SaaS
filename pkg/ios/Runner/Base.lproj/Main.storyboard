@@ -24,3 +24,7 @@
         </scene>
     </scenes>
 </document>
+<key>NSCameraUsageDescription</key>
+<string>Yapay zeka ile stüdyo kalitesine dönüştürmek üzere takı fotoğrafı çekmek için kameraya erişim gereklidir.</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>Stüdyo üretimi için galerinizden takı görseli seçmek amacıyla fotoğraflarınıza erişim gereklidir.</string>
