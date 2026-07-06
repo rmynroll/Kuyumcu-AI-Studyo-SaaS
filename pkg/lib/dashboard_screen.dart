@@ -1,8 +1,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kuyumcu_flutter/app_colors.dart';
+import 'package:kuyumcu_flutter/credits_provider.dart';
+import 'package:kuyumcu_flutter/membership_provider.dart';
 
 /// Ana ekran (Dashboard).
 ///
@@ -11,14 +14,16 @@ import 'package:kuyumcu_flutter/app_colors.dart';
 /// Ürün Yükle → Görsel Oluştur → Sonuçlarım. Kalan kredi küçük ve sade
 /// gösterilir; karmaşık bir dashboard/istatistik grid'i kasıtlı olarak yok
 /// (bkz. teknik doküman, "Çok basit kullanım için ekran prensipleri").
-class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key, this.creditBalance = 0, this.companyName});
+class DashboardScreen extends ConsumerWidget {
+  const DashboardScreen({super.key, this.companyName});
 
-  final int creditBalance;
   final String? companyName;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final creditsState = ref.watch(creditsProvider);
+    final activeCompanyName = companyName ?? 'Kuyumcu Sarraf';
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -33,7 +38,10 @@ class DashboardScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _Header(companyName: companyName, creditBalance: creditBalance),
+                    _Header(
+                      companyName: activeCompanyName,
+                      creditBalance: creditsState.balance,
+                    ),
                     const SizedBox(height: 40),
                     _ActionList(isWide: isWide),
                     const SizedBox(height: 32),
@@ -49,14 +57,17 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
-class _Header extends StatelessWidget {
+
+class _Header extends ConsumerWidget {
   const _Header({required this.companyName, required this.creditBalance});
 
   final String? companyName;
   final int creditBalance;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final membership = ref.watch(membershipProvider);
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -69,6 +80,41 @@ class _Header extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               const SizedBox(height: 6),
+              InkWell(
+                onTap: () => context.push('/subscription'),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: membership.isKobiPremium ? AppColors.gold.withOpacity(0.12) : AppColors.divider.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: membership.isKobiPremium ? AppColors.gold : AppColors.divider,
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        membership.isKobiPremium ? Icons.verified_user : Icons.person_outline,
+                        color: membership.isKobiPremium ? AppColors.gold : AppColors.textSecondary,
+                        size: 12,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        membership.displayName.toUpperCase(),
+                        style: TextStyle(
+                          color: membership.isKobiPremium ? AppColors.gold : AppColors.textSecondary,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
               Text(
                 'Bugün hangi ürünü öne çıkaralım?',
                 style: Theme.of(context).textTheme.bodyLarge,
@@ -131,6 +177,36 @@ class _ActionList extends StatelessWidget {
         label: 'Ürün Yükle',
         subtitle: 'Yeni bir yüzük, kolye veya bileklik ekle',
         onTap: () => context.push('/products/upload'),
+      ),
+      AppPrimaryActionCard(
+        icon: Icons.palette_outlined,
+        label: 'İlham Panosu (Stil Aktarımı)',
+        subtitle: 'Instagram/Pinterest stilini kendi ürününe uygula',
+        onTap: () => context.push('/generation/inspiration'),
+      ),
+      AppPrimaryActionCard(
+        icon: Icons.auto_awesome_motion_outlined,
+        label: 'Koleksiyon Stüdyosu (Toplu Üretim)',
+        subtitle: 'Koleksiyonundaki ürünleri tek şablonla aynı stilde toplu üret',
+        onTap: () => context.push('/generation/collection'),
+      ),
+      AppPrimaryActionCard(
+        icon: Icons.calendar_today_rounded,
+        label: 'Üretim Takvimi & CAD Önerileri',
+        subtitle: 'Sezonluk kampanya takvimi ve KOBİ model önerileri',
+        onTap: () => context.push('/premium/calendar'),
+      ),
+      AppPrimaryActionCard(
+        icon: Icons.circle_outlined,
+        label: 'Yüzük Ölçer',
+        subtitle: 'Fiziksel kalibrasyon ile parmak ölçüsü hesaplayın',
+        onTap: () => context.push('/premium/ring-sizer'),
+      ),
+      AppPrimaryActionCard(
+        icon: Icons.insights_rounded,
+        label: 'Performans Cebi',
+        subtitle: 'Hangi görselleriniz daha çok sipariş getirdi?',
+        onTap: () => context.push('/premium/performance'),
       ),
       AppPrimaryActionCard(
         icon: Icons.auto_awesome_outlined,

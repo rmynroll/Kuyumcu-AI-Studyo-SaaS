@@ -5,6 +5,18 @@ import 'package:go_router/go_router.dart';
 import 'package:kuyumcu_flutter/dashboard_screen.dart';
 import 'package:kuyumcu_flutter/generation_mode_selection_screen.dart';
 import 'package:kuyumcu_flutter/generation_progress_screen.dart';
+import 'package:kuyumcu_flutter/main_navigation_screen.dart';
+import 'package:kuyumcu_flutter/comparison_screen.dart';
+import 'package:kuyumcu_flutter/qa_panel_screen.dart';
+import 'package:kuyumcu_flutter/inspiration_board_screen.dart';
+import 'package:kuyumcu_flutter/collection_studio_screen.dart';
+import 'package:kuyumcu_flutter/ring_sizer_screen.dart';
+import 'package:kuyumcu_flutter/customer_mirror_screen.dart';
+import 'package:kuyumcu_flutter/performance_pocket_screen.dart';
+import 'package:kuyumcu_flutter/brand_kit_screen.dart';
+import 'package:kuyumcu_flutter/campaign_cards_screen.dart';
+import 'package:kuyumcu_flutter/subscription_screen.dart';
+import 'package:kuyumcu_flutter/campaign_calendar_screen.dart';
 
 /// Uygulamanın tüm route'ları tek yerde tanımlanır.
 ///
@@ -19,7 +31,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/',
-        builder: (context, state) => const DashboardScreen(),
+        builder: (context, state) => const MainNavigationScreen(),
       ),
       GoRoute(
         path: '/generation/mode',
@@ -31,10 +43,75 @@ final routerProvider = Provider<GoRouter>((ref) {
           generationId: state.pathParameters['id']!,
         ),
       ),
+      GoRoute(
+        path: '/comparison',
+        builder: (context, state) {
+          final before = state.uri.queryParameters['before'] ?? '';
+          final after = state.uri.queryParameters['after'] ?? '';
+          final title = state.uri.queryParameters['title'] ?? 'Ürün Kıyaslama';
+          return ComparisonScreen(
+            beforeImageUrl: before,
+            afterImageUrl: after,
+            productTitle: title,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/results/:id',
+        builder: (context, state) => QaPanelScreen(
+          generationId: state.pathParameters['id']!,
+        ),
+      ),
+      GoRoute(
+        path: '/generation/inspiration',
+        builder: (context, state) => const InspirationBoardScreen(),
+      ),
+      GoRoute(
+        path: '/generation/collection',
+        builder: (context, state) => const CollectionStudioScreen(),
+      ),
+      GoRoute(
+        path: '/premium/ring-sizer',
+        builder: (context, state) => const RingSizerScreen(),
+      ),
+      GoRoute(
+        path: '/premium/customer-mirror',
+        builder: (context, state) {
+          final title = state.uri.queryParameters['title'] ?? '';
+          final imageUrl = state.uri.queryParameters['imageUrl'] ?? '';
+          return CustomerMirrorScreen(
+            productTitle: title,
+            productImageUrl: imageUrl,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/premium/performance',
+        builder: (context, state) => const PerformancePocketScreen(),
+      ),
+      GoRoute(
+        path: '/premium/brand-kit',
+        builder: (context, state) => const BrandKitScreen(),
+      ),
+      GoRoute(
+        path: '/premium/campaign',
+        builder: (context, state) {
+          final imageUrl = state.uri.queryParameters['imageUrl'] ?? '';
+          return CampaignCardsScreen(productImageUrl: imageUrl);
+        },
+      ),
+      GoRoute(
+        path: '/subscription',
+        builder: (context, state) => const SubscriptionScreen(),
+      ),
+      GoRoute(
+        path: '/premium/calendar',
+        builder: (context, state) => const CampaignCalendarScreen(),
+      ),
       // TODO: /products/upload
       // TODO: /generation/template
       // TODO: /generation/reference
-      // TODO: /results ve /results/:id
+      // TODO: /results
     ],
   );
 });
