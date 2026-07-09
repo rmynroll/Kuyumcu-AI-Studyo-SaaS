@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kuyumcu_flutter/app_colors.dart';
 
-
-
 /// Kullanıcı "Görsel Oluştur"a bastığında açılan ekran.
 ///
 /// İki büyük karttan birini seçer: "Hazır Şablonla Üret" veya
@@ -49,8 +47,7 @@ class GenerationModeSelectionScreen extends StatelessWidget {
                   ModeSelectionCard(
                     icon: Icons.image_search_outlined,
                     title: 'Örnek Görsele Göre Üret',
-                    description:
-                        'Beğendiğin bir fotoğrafı yükle, ürününü aynı '
+                    description: 'Beğendiğin bir fotoğrafı yükle, ürününü aynı '
                         'tarzda üretelim.',
                     onTap: () => context.push('/generation/reference'),
                   ),
@@ -100,23 +97,30 @@ class ModeSelectionCard extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+                          child: Text(title,
+                              style: Theme.of(context).textTheme.titleMedium),
                         ),
                         if (badgeText != null) ...[
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.12),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Text(badgeText!, style: Theme.of(context).textTheme.labelSmall),
+                            child: Text(badgeText!,
+                                style: Theme.of(context).textTheme.labelSmall),
                           ),
                         ]
                       ],
                     ),
                     const SizedBox(height: 6),
-                    Text(description, style: Theme.of(context).textTheme.bodyMedium),
+                    Text(description,
+                        style: Theme.of(context).textTheme.bodyMedium),
                   ],
                 ),
               ),

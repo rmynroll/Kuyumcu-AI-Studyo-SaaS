@@ -14,6 +14,8 @@ import 'package:kuyumcu_flutter/brand_kit_screen.dart';
 import 'package:kuyumcu_flutter/campaign_cards_screen.dart';
 import 'package:kuyumcu_flutter/subscription_screen.dart';
 import 'package:kuyumcu_flutter/campaign_calendar_screen.dart';
+import 'package:kuyumcu_flutter/shared_product_view_screen.dart';
+import 'package:kuyumcu_flutter/gold_tracking_screen.dart';
 
 /// Uygulamanın tüm route'ları tek yerde tanımlanır.
 ///
@@ -69,7 +71,27 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/premium/ring-sizer',
-        builder: (context, state) => const RingSizerScreen(),
+        builder: (context, state) {
+          final client = state.uri.queryParameters['client'] == '1';
+          return RingSizerScreen(isClientMode: client);
+        },
+      ),
+      GoRoute(
+        path: '/shared-product-view',
+        builder: (context, state) {
+          final imageUrl = state.uri.queryParameters['imageUrl'] ?? '';
+          final title = state.uri.queryParameters['title'] ?? '';
+          final price = state.uri.queryParameters['price'] ?? '14.990 TL';
+          final ar = state.uri.queryParameters['ar'] == '1';
+          final sizer = state.uri.queryParameters['sizer'] == '1';
+          return SharedProductViewScreen(
+            imageUrl: imageUrl,
+            productTitle: title,
+            price: price,
+            include3D: ar,
+            includeSizer: sizer,
+          );
+        },
       ),
       GoRoute(
         path: '/premium/customer-mirror',
@@ -104,6 +126,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/premium/calendar',
         builder: (context, state) => const CampaignCalendarScreen(),
+      ),
+      GoRoute(
+        path: '/premium/gold-tracking',
+        builder: (context, state) => const GoldTrackingScreen(),
       ),
       // TODO: /products/upload
       // TODO: /generation/template

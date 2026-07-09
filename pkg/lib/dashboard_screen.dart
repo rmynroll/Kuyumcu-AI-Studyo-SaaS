@@ -209,6 +209,12 @@ class _ActionList extends StatelessWidget {
         onTap: () => context.push('/premium/performance'),
       ),
       AppPrimaryActionCard(
+        icon: Icons.trending_up_rounded,
+        label: 'Canlı Altın Takip',
+        subtitle: 'Canlı altın fiyatları ve robot hesaplayıcı',
+        onTap: () => context.push('/premium/gold-tracking'),
+      ),
+      AppPrimaryActionCard(
         icon: Icons.auto_awesome_outlined,
         label: 'Görsel Oluştur',
         subtitle: 'Hazır şablon ya da örnek görselle üret',

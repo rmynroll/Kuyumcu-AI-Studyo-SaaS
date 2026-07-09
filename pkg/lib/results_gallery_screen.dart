@@ -374,6 +374,23 @@ class _ResultsGalleryScreenState extends ConsumerState<ResultsGalleryScreen> {
                         ),
                         onPressed: () {
                           Navigator.pop(context);
+                          _showB2b2cShareSheet(context, item);
+                        },
+                        icon: const Icon(Icons.qr_code_2_rounded, size: 20),
+                        label: const Text('Müşteriye Özel Bağlantı (QR/WhatsApp)', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          foregroundColor: AppColors.gold,
+                          shadowColor: Colors.transparent,
+                          side: const BorderSide(color: AppColors.gold, width: 1.5),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          minimumSize: const Size.fromHeight(48),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
                           context.push(
                             '/premium/campaign?imageUrl=${Uri.encodeComponent(item.imageUrl)}',
                           );
@@ -429,6 +446,169 @@ class _ResultsGalleryScreenState extends ConsumerState<ResultsGalleryScreen> {
           ),
         );
       },
+    );
+  }
+
+  void _showB2b2cShareSheet(BuildContext context, JewelryItem item) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surfaceElevated,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) {
+        return _B2b2cShareSheetContent(item: item);
+      },
+    );
+  }
+}
+
+class _B2b2cShareSheetContent extends StatefulWidget {
+  final JewelryItem item;
+
+  const _B2b2cShareSheetContent({required this.item});
+
+  @override
+  State<_B2b2cShareSheetContent> createState() => _B2b2cShareSheetContentState();
+}
+
+class _B2b2cShareSheetContentState extends State<_B2b2cShareSheetContent> {
+  bool _include3D = true;
+  bool _includeSizer = true;
+  bool _includePrice = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final sizerQuery = _includeSizer ? '1' : '0';
+    final arQuery = _include3D ? '1' : '0';
+    final priceQuery = _includePrice ? '14990' : '';
+    final shareLink = 'kuyumcuaistudio.com/view/item-${widget.item.id}?ar=$arQuery&sizer=$sizerQuery&price=$priceQuery';
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(24, 32, 24, MediaQuery.of(context).viewInsets.bottom + 40),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Müşteri Paylaşım Paneli',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Son müşterinizin kendi telefonunda etkileşimli olarak göreceği özellikleri seçin:',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+          ),
+          const SizedBox(height: 24),
+
+          // TOGGLES
+          SwitchListTile.adaptive(
+            title: const Text('3D Model / Döndürme Görünümü', style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.bold)),
+            subtitle: const Text('Müşteri ürünü sürükleyerek döndürebilir', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+            value: _include3D,
+            activeColor: AppColors.gold,
+            onChanged: (val) => setState(() => _include3D = val),
+          ),
+          SwitchListTile.adaptive(
+            title: const Text('Yüzük Ölçer Modülü', style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.bold)),
+            subtitle: const Text('Müşteri telefon ekranından ölçü alabilir', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+            value: _includeSizer,
+            activeColor: AppColors.gold,
+            onChanged: (val) => setState(() => _includeSizer = val),
+          ),
+          SwitchListTile.adaptive(
+            title: const Text('Fiyat Bilgisini Göster', style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.bold)),
+            subtitle: const Text('Katalogda 14.990 TL fiyatı gösterilir', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+            value: _includePrice,
+            activeColor: AppColors.gold,
+            onChanged: (val) => setState(() => _includePrice = val),
+          ),
+          const SizedBox(height: 24),
+
+          // QR CODE DISPLAY
+          Center(
+            child: Container(
+              width: 130,
+              height: 130,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.divider),
+              ),
+              child: Image.network(
+                'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${Uri.encodeComponent(shareLink)}',
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: SelectableText(
+              shareLink,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 11),
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          // ACTIONS Row
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.gold, width: 1.2),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.push(
+                      '/shared-product-view'
+                      '?imageUrl=${Uri.encodeComponent(widget.item.imageUrl)}'
+                      '&title=${Uri.encodeComponent(widget.item.title)}'
+                      '&price=${_includePrice ? '14.990 TL' : ''}'
+                      '&ar=${_include3D ? '1' : '0'}'
+                      '&sizer=${_includeSizer ? '1' : '0'}',
+                    );
+                  },
+                  icon: const Icon(Icons.visibility_outlined, color: AppColors.gold, size: 18),
+                  label: const Text('Müşteri Ekranını Önizle', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF25D366),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: const Color(0xFF25D366),
+                        content: Text('Bağlantı WhatsApp\'tan gönderildi!\nURL: $shareLink'),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.share, color: Colors.white, size: 18),
+                  label: const Text('WhatsApp ile Gönder', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
