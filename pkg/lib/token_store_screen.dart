@@ -153,7 +153,7 @@ class _BalanceCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Row(
-                  baseline: TextBaseline.alphabetic,
+                  textBaseline: TextBaseline.alphabetic,
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   children: [
                     Text(

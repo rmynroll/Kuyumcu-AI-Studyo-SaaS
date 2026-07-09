@@ -123,7 +123,7 @@ class _RingSizerScreenState extends State<RingSizerScreen> {
                         const SizedBox(height: 4),
                         Text(
                           '$_calculatedTrSize No',
-                          style: const TextStyle(color: AppColors.gold, fontSize: 22, fontWeight: FontWeight.extrabold),
+                          style: const TextStyle(color: AppColors.gold, fontSize: 22, fontWeight: FontWeight.w800),
                         ),
                       ],
                     ),

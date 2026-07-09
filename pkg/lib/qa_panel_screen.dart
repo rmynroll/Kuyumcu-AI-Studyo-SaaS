@@ -14,13 +14,42 @@ class QaPanelScreen extends ConsumerStatefulWidget {
 }
 
 class _QaPanelScreenState extends ConsumerState<QaPanelScreen> {
-  bool _isSuccessCase = true; // Simulates Success or Failure status for demo
+  late bool _isSuccessCase;
   bool _isProcessingRefund = false;
+  late String _beforeUrl;
+  late String _afterUrl;
+  late String _title;
 
-  // Mock URLs for original and generated ring
-  final String _beforeUrl = 'https://images.unsplash.com/photo-1598560917505-59a3ad559071?q=80&w=400&auto=format&fit=crop';
-  final String _afterUrl = 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=400&auto=format&fit=crop';
-  final String _title = 'Altın Yakut Yüzük';
+  static final Set<String> _refundedIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.generationId == '2') {
+      _isSuccessCase = false;
+      _beforeUrl = 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?q=80&w=400&auto=format&fit=crop';
+      _afterUrl = 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?q=80&w=400&auto=format&fit=crop';
+      _title = 'Elmas Baget Yüzük';
+
+      // Automatically refund credit if it has not been refunded yet
+      if (!_refundedIds.contains(widget.generationId)) {
+        _refundedIds.add(widget.generationId);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ref.read(creditsProvider.notifier).addCredits(
+              1,
+              'Otomatik QA İadesi (Görsel #${widget.generationId})',
+            );
+          }
+        });
+      }
+    } else {
+      _isSuccessCase = true;
+      _beforeUrl = 'https://images.unsplash.com/photo-1598560917505-59a3ad559071?q=80&w=400&auto=format&fit=crop';
+      _afterUrl = 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=400&auto=format&fit=crop';
+      _title = 'Altın Yakut Yüzük';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -221,15 +250,15 @@ class _QaPanelScreenState extends ConsumerState<QaPanelScreen> {
                     else
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.error,
-                          foregroundColor: Colors.white,
+                          backgroundColor: AppColors.gold,
+                          foregroundColor: AppColors.textOnGold,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           minimumSize: const Size.fromHeight(56),
                         ),
                         onPressed: () => _performRefundFlow(context),
-                        icon: const Icon(Icons.replay_rounded, color: Colors.white),
+                        icon: const Icon(Icons.refresh_rounded, color: AppColors.textOnGold),
                         label: const Text(
-                          'Yeniden Üret (Kredi İadeli)',
+                          'Yeniden Üretimi Başlat',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                       ),
@@ -256,11 +285,8 @@ class _QaPanelScreenState extends ConsumerState<QaPanelScreen> {
       _isProcessingRefund = true;
     });
 
-    // Simulate calling backend retry API and credentials refund
+    // Simulate calling backend retry API
     await Future.delayed(const Duration(seconds: 1500 ~/ 1000));
-
-    // Refund credit to Riverpod credits notifier
-    ref.read(creditsProvider.notifier).addCredits(1, 'QA Sapması İadesi');
 
     setState(() {
       _isProcessingRefund = false;
@@ -282,11 +308,11 @@ class _QaPanelScreenState extends ConsumerState<QaPanelScreen> {
                   child: const Icon(Icons.check, color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 12),
-                const Text('Kredi İade Edildi'),
+                const Text('Üretim Başlatıldı'),
               ],
             ),
             content: const Text(
-              'Sapma tespit edilen görsel silinmiştir. 1 adet görsel üretim krediniz hesabınıza iade edilerek yeni üretim sıraya alınmıştır.',
+              'Yeni üretim sıraya alınmıştır. İade edilen krediniz bu işlem için kullanılacaktır.',
               style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
             ),
             actions: [
@@ -408,20 +434,55 @@ class _QaPanelScreenState extends ConsumerState<QaPanelScreen> {
 
   Widget _buildFailureWarning() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.error.withOpacity(0.3)),
+        color: AppColors.error.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.error.withOpacity(0.3), width: 1.5),
       ),
-      child: const Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(Icons.report_problem_outlined, color: AppColors.error, size: 24),
-          SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Dikkat: Otomatik doğruluk kontrolü sapmalar bulmuştur. Krediniz iade edilerek yeniden üretim başlatılabilir.',
-              style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w500),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: AppColors.error.withOpacity(0.12), shape: BoxShape.circle),
+                child: const Icon(Icons.shield_outlined, color: AppColors.error, size: 22),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Takıya Özel Sadakat Garantisi',
+                  style: TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Pebblely gibi genel AI araçlarının aksine, Kuyumcu AI Stüdyo takıya özel bir doğrulama katmanına (taş sayısı, metal tonu ve siluet kontrolü) sahiptir. '
+            'Bu üretimde kalite puanı eşik değerin altında kaldığı için 1 krediniz otomatik olarak hesabınıza iade edilmiştir. '
+            'Ürününüz bozulursa kredi bizden!',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.4),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.success.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.success.withOpacity(0.3)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.check, color: AppColors.success, size: 16),
+                SizedBox(width: 8),
+                Text(
+                  '+1 Kredi Otomatik İade Edildi (QA İadesi)',
+                  style: TextStyle(color: AppColors.success, fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
           ),
         ],

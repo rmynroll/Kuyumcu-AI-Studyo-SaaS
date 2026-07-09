@@ -156,7 +156,7 @@ class PerformancePocketScreen extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 24, fontWeight: FontWeight.extrabold),
+            style: const TextStyle(color: AppColors.textPrimary, fontSize: 24, fontWeight: FontWeight.w800),
           ),
         ],
       ),

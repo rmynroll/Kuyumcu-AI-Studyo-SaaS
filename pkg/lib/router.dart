@@ -1,8 +1,5 @@
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import 'package:kuyumcu_flutter/dashboard_screen.dart';
 import 'package:kuyumcu_flutter/generation_mode_selection_screen.dart';
 import 'package:kuyumcu_flutter/generation_progress_screen.dart';
 import 'package:kuyumcu_flutter/main_navigation_screen.dart';

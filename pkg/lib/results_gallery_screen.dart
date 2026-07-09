@@ -10,6 +10,8 @@ class JewelryItem {
   final String originalImageUrl;
   final String status; // 'completed', 'processing', 'failed'
   final DateTime date;
+  final int qaScore;
+  final bool isRefunded;
 
   JewelryItem({
     required this.id,
@@ -18,14 +20,24 @@ class JewelryItem {
     required this.originalImageUrl,
     required this.status,
     required this.date,
+    this.qaScore = 100,
+    this.isRefunded = false,
   });
 }
 
-class ResultsGalleryScreen extends ConsumerWidget {
+class ResultsGalleryScreen extends ConsumerStatefulWidget {
   const ResultsGalleryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ResultsGalleryScreen> createState() => _ResultsGalleryScreenState();
+}
+
+class _ResultsGalleryScreenState extends ConsumerState<ResultsGalleryScreen> {
+  bool _isSelectionMode = false;
+  final Set<String> _selectedItemIds = {};
+
+  @override
+  Widget build(BuildContext context) {
     // Premium Mock data for jewelry results showing Before (original) and After (AI Studio)
     final items = [
       JewelryItem(
@@ -35,6 +47,8 @@ class ResultsGalleryScreen extends ConsumerWidget {
         imageUrl: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=400&auto=format&fit=crop',
         status: 'completed',
         date: DateTime.now().subtract(const Duration(hours: 1)),
+        qaScore: 100,
+        isRefunded: false,
       ),
       JewelryItem(
         id: '2',
@@ -43,6 +57,8 @@ class ResultsGalleryScreen extends ConsumerWidget {
         imageUrl: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?q=80&w=400&auto=format&fit=crop',
         status: 'completed',
         date: DateTime.now().subtract(const Duration(hours: 4)),
+        qaScore: 82,
+        isRefunded: true,
       ),
       JewelryItem(
         id: '3',
@@ -51,6 +67,8 @@ class ResultsGalleryScreen extends ConsumerWidget {
         imageUrl: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=400&auto=format&fit=crop',
         status: 'completed',
         date: DateTime.now().subtract(const Duration(days: 1)),
+        qaScore: 98,
+        isRefunded: false,
       ),
       JewelryItem(
         id: '4',
@@ -59,6 +77,8 @@ class ResultsGalleryScreen extends ConsumerWidget {
         imageUrl: 'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?q=80&w=400&auto=format&fit=crop',
         status: 'processing',
         date: DateTime.now(),
+        qaScore: 0,
+        isRefunded: false,
       ),
       JewelryItem(
         id: '5',
@@ -72,25 +92,105 @@ class ResultsGalleryScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      bottomNavigationBar: _isSelectionMode
+          ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                border: Border(top: BorderSide(color: AppColors.divider)),
+              ),
+              child: SafeArea(
+                child: Row(
+                  children: [
+                    Text(
+                      '${_selectedItemIds.length} ürün seçildi',
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _isSelectionMode = false;
+                          _selectedItemIds.clear();
+                        });
+                      },
+                      child: const Text('İptal', style: TextStyle(color: AppColors.textSecondary)),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.gold,
+                        foregroundColor: AppColors.textOnGold,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                      onPressed: _selectedItemIds.isEmpty
+                          ? null
+                          : () {
+                              final selectedItems = items
+                                  .where((item) => _selectedItemIds.contains(item.id))
+                                  .toList();
+                              _showWhatsAppExportDialog(context, selectedItems);
+                            },
+                      icon: const Icon(Icons.share_outlined, size: 18),
+                      label: const Text('WhatsApp Kataloğu Üret', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : null,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Sonuçlarım',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Sonuçlarım',
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                            ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Yapay zeka ile ürettiğiniz stüdyo görselleri.',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      _isSelectionMode ? Icons.check_circle : Icons.rule_rounded,
+                      color: _isSelectionMode ? AppColors.gold : AppColors.textSecondary,
+                      size: 24,
                     ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Yapay zeka ile ürettiğiniz stüdyo görselleri.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                    onPressed: () {
+                      setState(() {
+                        if (_isSelectionMode) {
+                          _isSelectionMode = false;
+                          _selectedItemIds.clear();
+                        } else {
+                          _isSelectionMode = true;
+                        }
+                      });
+                    },
+                    tooltip: _isSelectionMode ? 'Seçimi Kapat' : 'Çoklu Seçim / WhatsApp',
+                  ),
+                ],
               ),
               const SizedBox(height: 32),
 
@@ -107,7 +207,36 @@ class ResultsGalleryScreen extends ConsumerWidget {
                 itemCount: items.length,
                 itemBuilder: (context, index) {
                   final item = items[index];
-                  return _JewelryGalleryCard(item: item);
+                  final isSelected = _selectedItemIds.contains(item.id);
+                  return _JewelryGalleryCard(
+                    item: item,
+                    isSelectionMode: _isSelectionMode,
+                    isSelected: isSelected,
+                    onTap: () {
+                      if (_isSelectionMode) {
+                        if (item.status != 'completed') return;
+                        setState(() {
+                          if (isSelected) {
+                            _selectedItemIds.remove(item.id);
+                            if (_selectedItemIds.isEmpty) {
+                              _isSelectionMode = false;
+                            }
+                          } else {
+                            _selectedItemIds.add(item.id);
+                          }
+                        });
+                      } else {
+                        _showImageDetails(context, item);
+                      }
+                    },
+                    onLongPress: () {
+                      if (item.status != 'completed') return;
+                      setState(() {
+                        _isSelectionMode = true;
+                        _selectedItemIds.add(item.id);
+                      });
+                    },
+                  );
                 },
               ),
             ],
@@ -116,14 +245,16 @@ class ResultsGalleryScreen extends ConsumerWidget {
       ),
     );
   }
-}
 
-class _JewelryGalleryCard extends StatelessWidget {
-  const _JewelryGalleryCard({required this.item});
+  void _showWhatsAppExportDialog(BuildContext context, List<JewelryItem> selectedItems) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _WhatsAppExportDialog(items: selectedItems),
+    );
+  }
 
-  final JewelryItem item;
-
-  void _showImageDetails(BuildContext context) {
+  void _showImageDetails(BuildContext context, JewelryItem item) {
     showDialog(
       context: context,
       builder: (context) {
@@ -164,7 +295,7 @@ class _JewelryGalleryCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        _StatusBadge(status: item.status),
+                         _StatusBadge(item: item),
                         const Spacer(),
                         Text(
                           'ID: #${item.id}',
@@ -184,7 +315,7 @@ class _JewelryGalleryCard extends StatelessWidget {
                           minimumSize: const Size.fromHeight(48),
                         ),
                         onPressed: () {
-                          Navigator.pop(context); // Close the dialog
+                          Navigator.pop(context);
                           context.push(
                             '/comparison?before=${Uri.encodeComponent(item.originalImageUrl)}'
                             '&after=${Uri.encodeComponent(item.imageUrl)}'
@@ -205,7 +336,7 @@ class _JewelryGalleryCard extends StatelessWidget {
                           minimumSize: const Size.fromHeight(48),
                         ),
                         onPressed: () {
-                          Navigator.pop(context); // Close the dialog
+                          Navigator.pop(context);
                           context.push('/results/${item.id}');
                         },
                         icon: const Icon(Icons.analytics_outlined, size: 20),
@@ -222,7 +353,7 @@ class _JewelryGalleryCard extends StatelessWidget {
                           minimumSize: const Size.fromHeight(48),
                         ),
                         onPressed: () {
-                          Navigator.pop(context); // Close the dialog
+                          Navigator.pop(context);
                           context.push(
                             '/premium/customer-mirror?title=${Uri.encodeComponent(item.title)}'
                             '&imageUrl=${Uri.encodeComponent(item.imageUrl)}',
@@ -242,7 +373,7 @@ class _JewelryGalleryCard extends StatelessWidget {
                           minimumSize: const Size.fromHeight(48),
                         ),
                         onPressed: () {
-                          Navigator.pop(context); // Close the dialog
+                          Navigator.pop(context);
                           context.push(
                             '/premium/campaign?imageUrl=${Uri.encodeComponent(item.imageUrl)}',
                           );
@@ -300,6 +431,22 @@ class _JewelryGalleryCard extends StatelessWidget {
       },
     );
   }
+}
+
+class _JewelryGalleryCard extends StatelessWidget {
+  const _JewelryGalleryCard({
+    required this.item,
+    required this.isSelectionMode,
+    required this.isSelected,
+    required this.onTap,
+    required this.onLongPress,
+  });
+
+  final JewelryItem item;
+  final bool isSelectionMode;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -308,10 +455,14 @@ class _JewelryGalleryCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: AppColors.divider),
+        side: BorderSide(
+          color: isSelected ? AppColors.gold : AppColors.divider,
+          width: isSelected ? 2.0 : 1.0,
+        ),
       ),
       child: InkWell(
-        onTap: () => _showImageDetails(context),
+        onTap: onTap,
+        onLongPress: onLongPress,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -330,10 +481,28 @@ class _JewelryGalleryCard extends StatelessWidget {
                       );
                     },
                   ),
+                  if (isSelected)
+                    Container(
+                      color: AppColors.gold.withOpacity(0.12),
+                    ),
                   Positioned(
                     top: 10,
                     right: 10,
-                    child: _StatusBadge(status: item.status),
+                    child: isSelectionMode
+                        ? Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: isSelected ? AppColors.gold : Colors.black54,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 1),
+                            ),
+                            child: Icon(
+                              isSelected ? Icons.check : Icons.add,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                          )
+                        : _StatusBadge(item: item),
                   ),
                 ],
               ),
@@ -359,10 +528,455 @@ class _JewelryGalleryCard extends StatelessWidget {
   }
 }
 
-class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.status});
+class _WhatsAppExportDialog extends StatefulWidget {
+  final List<JewelryItem> items;
 
-  final String status;
+  const _WhatsAppExportDialog({required this.items});
+
+  @override
+  State<_WhatsAppExportDialog> createState() => _WhatsAppExportDialogState();
+}
+
+class _WhatsAppExportDialogState extends State<_WhatsAppExportDialog> {
+  late final List<TextEditingController> _priceControllers;
+  late final List<TextEditingController> _titleControllers;
+  final TextEditingController _brandController = TextEditingController(text: 'Öz Kuyumculuk');
+  String _selectedCurrency = 'TRY';
+  bool _isExported = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _priceControllers = widget.items.map((_) => TextEditingController(text: '15000')).toList();
+    _titleControllers = widget.items.map((item) => TextEditingController(text: item.title)).toList();
+  }
+
+  @override
+  void dispose() {
+    for (var c in _priceControllers) {
+      c.dispose();
+    }
+    for (var c in _titleControllers) {
+      c.dispose();
+    }
+    _brandController.dispose();
+    super.dispose();
+  }
+
+  String _generateCSV() {
+    final buffer = StringBuffer();
+    buffer.writeln('id,title,description,availability,condition,price,link,image_link,brand');
+    for (int i = 0; i < widget.items.length; i++) {
+      final id = 'SKU-${widget.items[i].id}';
+      final title = _titleControllers[i].text.replaceAll(',', ' ');
+      final priceVal = double.tryParse(_priceControllers[i].text) ?? 15000.0;
+      final priceFormatted = '${priceVal.toStringAsFixed(2)} $_selectedCurrency';
+      final desc = 'Kuyumcu AI Studio ile uretilmis ozel tasarim taki.'.replaceAll(',', ' ');
+      final link = 'https://kuyumcu.ai/catalog/$id';
+      final imageLink = widget.items[i].imageUrl;
+      final brand = _brandController.text.replaceAll(',', ' ');
+      buffer.writeln('$id,$title,$desc,in stock,new,$priceFormatted,$link,$imageLink,$brand');
+    }
+    return buffer.toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: AppColors.surfaceElevated,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 650),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Title
+            Row(
+              children: [
+                const Icon(Icons.share_outlined, color: AppColors.gold, size: 24),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _isExported ? 'WhatsApp Kataloğu Hazır!' : 'WhatsApp Kataloğu Üret',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Divider(color: AppColors.divider),
+            const SizedBox(height: 16),
+
+            // Content
+            Expanded(
+              child: SingleChildScrollView(
+                child: _isExported ? _buildSuccessView() : _buildConfigView(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Divider(color: AppColors.divider),
+            const SizedBox(height: 16),
+
+            // Action Buttons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.divider),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Kapat', style: TextStyle(color: AppColors.textSecondary)),
+                ),
+                const SizedBox(width: 12),
+                if (!_isExported)
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.gold,
+                      foregroundColor: AppColors.textOnGold,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isExported = true;
+                      });
+                    },
+                    child: const Text('Kataloğu Oluştur', style: TextStyle(fontWeight: FontWeight.bold)),
+                  )
+                else
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.gold,
+                      foregroundColor: AppColors.textOnGold,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    ),
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          backgroundColor: AppColors.success,
+                          content: Text('WhatsApp Katalog CSV dosyası başarıyla indirildi!'),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.download_rounded, size: 18),
+                    label: const Text('CSV Dosyasını İndir', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildConfigView() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Secilen ${widget.items.length} urun icin katalog fiyat ve baslik bilgilerini girin:',
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+        ),
+        const SizedBox(height: 16),
+
+        // Products List
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: widget.items.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 16),
+          itemBuilder: (context, index) {
+            final item = widget.items[index];
+            return Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.divider),
+              ),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      item.imageUrl,
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Title field
+                        SizedBox(
+                          height: 32,
+                          child: TextField(
+                            controller: _titleControllers[index],
+                            style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.bold),
+                            decoration: const InputDecoration(
+                              hintText: 'Urun Adi',
+                              contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              border: OutlineInputBorder(borderSide: BorderSide(color: AppColors.divider)),
+                              focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.gold)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Price field
+                        Row(
+                          children: [
+                            const Text('Fiyat:', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: SizedBox(
+                                height: 32,
+                                child: TextField(
+                                  controller: _priceControllers[index],
+                                  keyboardType: TextInputType.number,
+                                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 12),
+                                  decoration: const InputDecoration(
+                                    hintText: 'Orn: 15000',
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    border: OutlineInputBorder(borderSide: BorderSide(color: AppColors.divider)),
+                                    focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.gold)),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 24),
+        const Text(
+          'Genel Katalog Ayarlari',
+          style: TextStyle(color: AppColors.gold, fontSize: 13, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+
+        // Brand name
+        const Text('Marka / Magaza Adi:', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+        const SizedBox(height: 6),
+        TextField(
+          controller: _brandController,
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: AppColors.surface,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.divider),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.gold),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Currency
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Para Birimi:', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.divider),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selectedCurrency,
+                  dropdownColor: AppColors.surfaceElevated,
+                  icon: const Icon(Icons.arrow_drop_down, color: AppColors.gold),
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.bold),
+                  items: const [
+                    DropdownMenuItem(value: 'TRY', child: Text('Turk Lirasi (TRY)')),
+                    DropdownMenuItem(value: 'USD', child: Text('Amerikan Dolari (USD)')),
+                    DropdownMenuItem(value: 'EUR', child: Text('Euro (EUR)')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() {
+                        _selectedCurrency = val;
+                      });
+                    }
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSuccessView() {
+    final csvContent = _generateCSV();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.success.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.success.withOpacity(0.3)),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.check_circle, color: AppColors.success, size: 24),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Meta Commerce Manager uyumlu katalog basariyla uretildi.',
+                  style: TextStyle(color: AppColors.success, fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // CSV PREVIEW
+        const Text(
+          'CSV Icerik Onizlemesi',
+          style: TextStyle(color: AppColors.gold, fontSize: 12, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          height: 120,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.vertical,
+              child: SelectableText(
+                csvContent,
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 10, color: AppColors.textSecondary),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // HOW TO UPLOAD GUIDE
+        const Text(
+          'WhatsApp Business Yukleme Kilavuzu',
+          style: TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        _buildGuideStep(
+          '1',
+          'CSV Dosyasini Indirin',
+          'Asagidaki butona basarak olusturulan .csv dosyasini telefonunuza veya bilgisayariniza kaydedin.',
+        ),
+        const SizedBox(height: 12),
+        _buildGuideStep(
+          '2',
+          'Meta Commerce Manager\'a Giris Yapin',
+          'business.facebook.com/commerce adresine girip WhatsApp katalogunuzu secin.',
+        ),
+        const SizedBox(height: 12),
+        _buildGuideStep(
+          '3',
+          'Veri Akisi (Data Feed) Ekleyin',
+          'Veri Kaynaklari (Data Sources) sekmesinden "Urun Ekle" deyin ve "Veri Akisi (Data Feed)" secenegini secin.',
+        ),
+        const SizedBox(height: 12),
+        _buildGuideStep(
+          '4',
+          'CSV Dosyasini Surukleyin',
+          'Dosya yukleme alanina indirdiginiz .csv dosyasini yukleyin. Urunleriniz aninda WhatsApp katalogunuza islenecektir!',
+        ),
+        const SizedBox(height: 16),
+        TextButton.icon(
+          onPressed: () {
+            setState(() {
+              _isExported = false;
+            });
+          },
+          icon: const Icon(Icons.arrow_back, size: 16, color: AppColors.gold),
+          label: const Text('Bilgileri Duzenlemeye Don', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGuideStep(String number, String title, String body) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          alignment: Alignment.center,
+          decoration: const BoxDecoration(
+            color: AppColors.gold,
+            shape: BoxShape.circle,
+          ),
+          child: Text(
+            number,
+            style: const TextStyle(color: AppColors.textOnGold, fontSize: 12, fontWeight: FontWeight.bold),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                body,
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.item});
+
+  final JewelryItem item;
 
   @override
   Widget build(BuildContext context) {
@@ -370,11 +984,17 @@ class _StatusBadge extends StatelessWidget {
     IconData icon;
     String label;
 
-    switch (status) {
+    switch (item.status) {
       case 'completed':
-        color = AppColors.success;
-        icon = Icons.check_circle;
-        label = 'Tamamlandı';
+        if (item.isRefunded) {
+          color = AppColors.error;
+          icon = Icons.replay_rounded;
+          label = 'İade Edildi (%${item.qaScore})';
+        } else {
+          color = AppColors.success;
+          icon = Icons.check_circle;
+          label = 'Uyum: %${item.qaScore}';
+        }
         break;
       case 'processing':
         color = AppColors.warning;

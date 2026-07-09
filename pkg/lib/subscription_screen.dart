@@ -93,7 +93,7 @@ class SubscriptionScreen extends ConsumerWidget {
                     onSelect: () {
                       ref.read(membershipProvider.notifier).updateTier(MembershipTier.kobiPremium);
                       // Reward 100 credits for subscribing to premium
-                      ref.read(creditsProvider.notifier).buyCredits(100);
+                      ref.read(creditsProvider.notifier).addCredits(100, 'KOBİ Premium Planı');
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           backgroundColor: AppColors.success,
@@ -150,7 +150,7 @@ class SubscriptionScreen extends ConsumerWidget {
                 style: TextStyle(
                   color: isPremium ? AppColors.gold : AppColors.textPrimary,
                   fontSize: 20,
-                  fontWeight: FontWeight.extrabold,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               if (isActive)
@@ -180,7 +180,7 @@ class SubscriptionScreen extends ConsumerWidget {
                 style: TextStyle(
                   color: AppColors.textPrimary,
                   fontSize: 32,
-                  fontWeight: FontWeight.black,
+                  fontWeight: FontWeight.w900,
                   fontFamily: 'Outfit',
                 ),
               ),

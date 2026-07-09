@@ -50,8 +50,8 @@ class SettingsScreen extends ConsumerWidget {
                       children: [
                         CircleAvatar(
                           radius: 30,
-                          backgroundColor: AppColors.gold.withOpacity(0.1),
-                          child: const Icon(Icons.storefront_rounded, color: AppColors.gold, size: 32),
+                          backgroundColor: AppColors.surfaceElevated,
+                          backgroundImage: const AssetImage('assets/icon/app_icon.png'),
                         ),
                         const SizedBox(width: 16),
                         const Expanded(

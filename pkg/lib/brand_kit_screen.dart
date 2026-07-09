@@ -12,7 +12,7 @@ class _BrandKitScreenState extends State<BrandKitScreen> {
   bool _watermarkEnabled = true;
   String _selectedPosition = 'Alt-Sağ'; // Default position
   double _opacity = 0.4; // 40% transparency
-  String? _logoUrl = 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?q=80&w=150&auto=format&fit=crop'; // Mock crest logo
+  String? _logoUrl; // Default to fallback asset logo
 
   final List<String> _positions = ['Üst-Sol', 'Üst-Sağ', 'Merkez', 'Alt-Sol', 'Alt-Sağ'];
 
@@ -73,7 +73,7 @@ class _BrandKitScreenState extends State<BrandKitScreen> {
                           clipBehavior: Clip.antiAlias,
                           child: _logoUrl != null
                               ? Image.network(_logoUrl!, fit: BoxFit.cover)
-                              : const Icon(Icons.store_rounded, color: AppColors.textSecondary, size: 32),
+                              : Image.asset('assets/icon/app_icon.png', fit: BoxFit.cover),
                         ),
                         const SizedBox(width: 20),
                         Expanded(
