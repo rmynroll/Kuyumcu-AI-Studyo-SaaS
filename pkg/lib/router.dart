@@ -16,6 +16,13 @@ import 'package:kuyumcu_flutter/subscription_screen.dart';
 import 'package:kuyumcu_flutter/campaign_calendar_screen.dart';
 import 'package:kuyumcu_flutter/shared_product_view_screen.dart';
 import 'package:kuyumcu_flutter/gold_tracking_screen.dart';
+import 'package:kuyumcu_flutter/product_upload_screen.dart';
+import 'package:kuyumcu_flutter/company_details_screen.dart';
+import 'package:kuyumcu_flutter/notification_preferences_screen.dart';
+import 'package:kuyumcu_flutter/security_screen.dart';
+import 'package:kuyumcu_flutter/api_keys_screen.dart';
+import 'package:kuyumcu_flutter/support_help_screen.dart';
+import 'package:kuyumcu_flutter/about_screen.dart';
 
 /// Uygulamanın tüm route'ları tek yerde tanımlanır.
 ///
@@ -63,7 +70,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/generation/inspiration',
-        builder: (context, state) => const InspirationBoardScreen(),
+        builder: (context, state) {
+          final tabStr = state.uri.queryParameters['tab'];
+          final initialTab = tabStr != null ? int.tryParse(tabStr) : null;
+          final prompt = state.uri.queryParameters['prompt'];
+          return InspirationBoardScreen(
+            initialTab: initialTab,
+            initialPrompt: prompt,
+          );
+        },
       ),
       GoRoute(
         path: '/generation/collection',
@@ -131,9 +146,54 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/premium/gold-tracking',
         builder: (context, state) => const GoldTrackingScreen(),
       ),
-      // TODO: /products/upload
-      // TODO: /generation/template
-      // TODO: /generation/reference
+      GoRoute(
+        path: '/premium/company-details',
+        builder: (context, state) => const CompanyDetailsScreen(),
+      ),
+      GoRoute(
+        path: '/premium/notification-preferences',
+        builder: (context, state) => const NotificationPreferencesScreen(),
+      ),
+      GoRoute(
+        path: '/premium/security',
+        builder: (context, state) => const SecurityScreen(),
+      ),
+      GoRoute(
+        path: '/premium/api-keys',
+        builder: (context, state) => const ApiKeysScreen(),
+      ),
+      GoRoute(
+        path: '/premium/support',
+        builder: (context, state) => const SupportHelpScreen(),
+      ),
+      GoRoute(
+        path: '/premium/about',
+        builder: (context, state) => const AboutScreen(),
+      ),
+      GoRoute(
+        path: '/products/upload',
+        builder: (context, state) => const ProductUploadScreen(),
+      ),
+      GoRoute(
+        path: '/generation/template',
+        builder: (context, state) {
+          final prompt = state.uri.queryParameters['prompt'];
+          return InspirationBoardScreen(
+            initialTab: 0,
+            initialPrompt: prompt,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/generation/reference',
+        builder: (context, state) {
+          final prompt = state.uri.queryParameters['prompt'];
+          return InspirationBoardScreen(
+            initialTab: 1,
+            initialPrompt: prompt,
+          );
+        },
+      ),
       // TODO: /results
     ],
   );

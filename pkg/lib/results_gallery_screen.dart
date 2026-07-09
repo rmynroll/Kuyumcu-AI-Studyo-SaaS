@@ -35,11 +35,16 @@ class ResultsGalleryScreen extends ConsumerStatefulWidget {
 class _ResultsGalleryScreenState extends ConsumerState<ResultsGalleryScreen> {
   bool _isSelectionMode = false;
   final Set<String> _selectedItemIds = {};
+  
+  String _searchQuery = '';
+  String _selectedStatusFilter = 'Tümü';
+  
+  late List<JewelryItem> _itemsList;
 
   @override
-  Widget build(BuildContext context) {
-    // Premium Mock data for jewelry results showing Before (original) and After (AI Studio)
-    final items = [
+  void initState() {
+    super.initState();
+    _itemsList = [
       JewelryItem(
         id: '1',
         title: 'Altın Yakut Yüzük',
@@ -89,6 +94,54 @@ class _ResultsGalleryScreenState extends ConsumerState<ResultsGalleryScreen> {
         date: DateTime.now().subtract(const Duration(days: 2)),
       ),
     ];
+  }
+
+  void _showDeleteConfirmDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.surfaceElevated,
+          title: const Text('Görselleri Sil', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          content: Text('${_selectedItemIds.length} adet görsel geçmişten kalıcı olarak silinecektir. Emin misiniz?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('İptal', style: TextStyle(color: AppColors.textSecondary)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
+              onPressed: () {
+                setState(() {
+                  _itemsList.removeWhere((item) => _selectedItemIds.contains(item.id));
+                  _selectedItemIds.clear();
+                  _isSelectionMode = false;
+                });
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Seçilen görseller silindi.')),
+                );
+              },
+              child: const Text('Kalıcı Olarak Sil'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredItems = _itemsList.where((item) {
+      final matchesSearch = item.title.toLowerCase().contains(_searchQuery.toLowerCase());
+      if (!matchesSearch) return false;
+      if (_selectedStatusFilter == 'Tümü') return true;
+      if (_selectedStatusFilter == 'Başarılı') return item.status == 'completed' && !item.isRefunded;
+      if (_selectedStatusFilter == 'İade Edilenler') return item.isRefunded;
+      if (_selectedStatusFilter == 'İşlenenler') return item.status == 'processing';
+      if (_selectedStatusFilter == 'Başarısız') return item.status == 'failed';
+      return true;
+    }).toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -111,6 +164,12 @@ class _ResultsGalleryScreenState extends ConsumerState<ResultsGalleryScreen> {
                       ),
                     ),
                     const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                      onPressed: _selectedItemIds.isEmpty ? null : _showDeleteConfirmDialog,
+                      tooltip: 'Seçilenleri Sil',
+                    ),
+                    const SizedBox(width: 8),
                     TextButton(
                       onPressed: () {
                         setState(() {
@@ -131,7 +190,7 @@ class _ResultsGalleryScreenState extends ConsumerState<ResultsGalleryScreen> {
                       onPressed: _selectedItemIds.isEmpty
                           ? null
                           : () {
-                              final selectedItems = items
+                              final selectedItems = _itemsList
                                   .where((item) => _selectedItemIds.contains(item.id))
                                   .toList();
                               _showWhatsAppExportDialog(context, selectedItems);
@@ -192,7 +251,82 @@ class _ResultsGalleryScreenState extends ConsumerState<ResultsGalleryScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
+
+              // SEARCH BAR
+              TextField(
+                style: const TextStyle(color: Colors.white, fontSize: 13),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  hintText: 'Ürün ara...',
+                  hintStyle: const TextStyle(color: Colors.white30, fontSize: 13),
+                  prefixIcon: const Icon(Icons.search, color: AppColors.gold, size: 18),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.gold, width: 1),
+                  ),
+                ),
+                onChanged: (val) {
+                  setState(() {
+                    _searchQuery = val;
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+
+              // FILTER CHIPS ROW
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    'Tümü',
+                    'Başarılı',
+                    'İade Edilenler',
+                    'İşlenenler',
+                    'Başarısız'
+                  ].map((filter) {
+                    final isSelected = _selectedStatusFilter == filter;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: ChoiceChip(
+                        label: Text(filter, style: const TextStyle(fontSize: 11)),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          if (selected) {
+                            setState(() {
+                              _selectedStatusFilter = filter;
+                            });
+                          }
+                        },
+                        selectedColor: AppColors.gold.withOpacity(0.12),
+                        backgroundColor: AppColors.surface,
+                        labelStyle: TextStyle(
+                          color: isSelected ? AppColors.gold : AppColors.textSecondary,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: BorderSide(
+                            color: isSelected ? AppColors.gold : AppColors.divider,
+                          ),
+                        ),
+                        showCheckmark: false,
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 24),
 
               // GRID VIEW
               GridView.builder(
@@ -204,9 +338,9 @@ class _ResultsGalleryScreenState extends ConsumerState<ResultsGalleryScreen> {
                   mainAxisSpacing: 16,
                   childAspectRatio: 0.78,
                 ),
-                itemCount: items.length,
+                itemCount: filteredItems.length,
                 itemBuilder: (context, index) {
-                  final item = items[index];
+                  final item = filteredItems[index];
                   final isSelected = _selectedItemIds.contains(item.id);
                   return _JewelryGalleryCard(
                     item: item,

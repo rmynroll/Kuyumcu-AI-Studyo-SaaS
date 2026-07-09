@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'app_colors.dart';
 import 'credits_provider.dart';
 
@@ -13,8 +16,10 @@ class CollectionStudioScreen extends ConsumerStatefulWidget {
 
 class _CollectionStudioScreenState extends ConsumerState<CollectionStudioScreen> {
   final TextEditingController _nameController = TextEditingController(text: 'Nişan Koleksiyonu - Kadife Kutu Serisi');
+  final TextEditingController _extraDetailsController = TextEditingController();
   final Set<String> _selectedProductIds = {'1', '2', '3'}; // Default selected items
   String? _selectedTemplateId = '1';
+  final ImagePicker _picker = ImagePicker();
 
   // Mock raw products list
   final List<_MockRawProduct> _products = [
@@ -28,11 +33,38 @@ class _CollectionStudioScreenState extends ConsumerState<CollectionStudioScreen>
 
   // Mock template options
   final List<_MockTemplate> _templates = [
-    _MockTemplate(id: '1', name: 'Kırmızı Kadife', desc: 'Lüks kadife mücevher kutusu ve spot ışık'),
-    _MockTemplate(id: '2', name: 'Siyah Mermer', desc: 'Yansımalı cilalı mermer zemin'),
-    _MockTemplate(id: '3', name: 'Gün Işığı Yaprak', desc: 'Yanal doğal ışık ve palmiye gölgesi'),
-    _MockTemplate(id: '4', name: 'Klasik Fildişi', desc: 'Sade bej zemin ve yumuşak stüdyo tonu'),
+    _MockTemplate(
+      id: '1', 
+      name: 'Kırmızı Kadife', 
+      desc: 'Lüks kadife mücevher kutusu ve spot ışık',
+      imageUrl: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=300&auto=format&fit=crop'
+    ),
+    _MockTemplate(
+      id: '2', 
+      name: 'Siyah Mermer', 
+      desc: 'Yansımalı cilalı mermer zemin',
+      imageUrl: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=300&auto=format&fit=crop'
+    ),
+    _MockTemplate(
+      id: '3', 
+      name: 'Gün Işığı Yaprak', 
+      desc: 'Yanal doğal ışık ve palmiye gölgesi',
+      imageUrl: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?q=80&w=300&auto=format&fit=crop'
+    ),
+    _MockTemplate(
+      id: '4', 
+      name: 'Klasik Fildişi', 
+      desc: 'Sade bej zemin ve yumuşak stüdyo tonu',
+      imageUrl: 'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?q=80&w=300&auto=format&fit=crop'
+    ),
   ];
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _extraDetailsController.dispose();
+    super.dispose();
+  }
 
   void _toggleProductSelection(String id) {
     setState(() {
@@ -48,6 +80,107 @@ class _CollectionStudioScreenState extends ConsumerState<CollectionStudioScreen>
         _selectedProductIds.add(id);
       }
     });
+  }
+
+  Future<void> _pickNewProduct(ImageSource source) async {
+    try {
+      final XFile? image = await _picker.pickImage(source: source);
+      if (image != null) {
+        // Prompt for product name
+        if (mounted) {
+          final TextEditingController tempNameController = TextEditingController(
+            text: 'Yeni Koleksiyon Ürünü ${_products.length + 1}'
+          );
+          
+          showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                backgroundColor: AppColors.surface,
+                title: const Text('Ürün Bilgisi', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+                content: TextField(
+                  controller: tempNameController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: 'Ürün Adı',
+                    labelStyle: TextStyle(color: AppColors.textSecondary),
+                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.divider)),
+                    focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.gold)),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('İptal', style: TextStyle(color: AppColors.textSecondary)),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.gold, foregroundColor: AppColors.textOnGold),
+                    onPressed: () {
+                      final name = tempNameController.text.trim();
+                      if (name.isNotEmpty) {
+                        final newId = (_products.length + 1).toString();
+                        setState(() {
+                          _products.add(_MockRawProduct(
+                            id: newId,
+                            name: name,
+                            imageUrl: image.path,
+                          ));
+                          _selectedProductIds.add(newId);
+                        });
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('"$name" koleksiyona eklendi ve seçildi.')),
+                        );
+                      }
+                    },
+                    child: const Text('Ekle', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Fotoğraf eklenemedi: $e')),
+      );
+    }
+  }
+
+  void _showNewProductOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined, color: AppColors.gold),
+                title: const Text('Galeriden Fotoğraf Seç', style: TextStyle(color: AppColors.textPrimary)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickNewProduct(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined, color: AppColors.gold),
+                title: const Text('Kameradan Fotoğraf Çek', style: TextStyle(color: AppColors.textPrimary)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickNewProduct(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _startBatchGeneration() async {
@@ -123,9 +256,9 @@ class _CollectionStudioScreenState extends ConsumerState<CollectionStudioScreen>
                   child: CircularProgressIndicator(color: AppColors.gold, strokeWidth: 3.5),
                 ),
                 const SizedBox(height: 24),
-                Text(
+                const Text(
                   'Koleksiyon İşleniyor...',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -184,6 +317,18 @@ class _CollectionStudioScreenState extends ConsumerState<CollectionStudioScreen>
           );
         },
       );
+    }
+  }
+
+  Widget _buildProductImage(String path) {
+    if (path.startsWith('http') || path.startsWith('blob')) {
+      return Image.network(path, fit: BoxFit.cover);
+    } else {
+      if (kIsWeb) {
+        return Image.network(path, fit: BoxFit.cover);
+      } else {
+        return Image.file(File(path), fit: BoxFit.cover);
+      }
     }
   }
 
@@ -249,7 +394,17 @@ class _CollectionStudioScreenState extends ConsumerState<CollectionStudioScreen>
                   const SizedBox(height: 28),
 
                   // 2. ÜRÜN ÇOKLU SEÇİMİ
-                  _buildSectionHeader('Koleksiyona Dahil Edilecek Ürünler ($selectedCount Seçili)'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildSectionHeader('Koleksiyona Dahil Edilecek Ürünler ($selectedCount Seçili)'),
+                      TextButton.icon(
+                        onPressed: _showNewProductOptions,
+                        icon: const Icon(Icons.add_circle_outline, color: AppColors.gold, size: 16),
+                        label: const Text('Ürün Ekle', style: TextStyle(color: AppColors.gold, fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 12),
                   GridView.builder(
                     shrinkWrap: true,
@@ -281,7 +436,7 @@ class _CollectionStudioScreenState extends ConsumerState<CollectionStudioScreen>
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
-                              Image.network(p.imageUrl, fit: BoxFit.cover),
+                              _buildProductImage(p.imageUrl),
                               Positioned(
                                 top: 6,
                                 right: 6,
@@ -321,51 +476,120 @@ class _CollectionStudioScreenState extends ConsumerState<CollectionStudioScreen>
                   ),
                   const SizedBox(height: 28),
 
-                  // 3. ŞABLON SEÇİMİ
+                  // 3. ŞABLON SEÇİMİ (Yenilenmiş Görsel Kart Yapısı)
                   _buildSectionHeader('Ortak Tasarım Şablonu Seçin'),
                   const SizedBox(height: 12),
                   ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: _templates.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final t = _templates[index];
                       final isSelected = _selectedTemplateId == t.id;
 
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: isSelected ? AppColors.gold : AppColors.divider,
-                            width: isSelected ? 1.6 : 1,
+                      return InkWell(
+                        onTap: () {
+                          setState(() {
+                            _selectedTemplateId = t.id;
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          height: 90,
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isSelected ? AppColors.gold : AppColors.divider,
+                              width: isSelected ? 1.8 : 1,
+                            ),
                           ),
-                        ),
-                        child: RadioListTile<String>(
-                          value: t.id,
-                          groupValue: _selectedTemplateId,
-                          activeColor: AppColors.gold,
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedTemplateId = val;
-                            });
-                          },
-                          title: Text(
-                            t.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
-                          ),
-                          subtitle: Text(
-                            t.desc,
-                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          clipBehavior: Clip.antiAlias,
+                          child: Row(
+                            children: [
+                              // Şablon Önizleme Görseli
+                              Container(
+                                width: 90,
+                                height: 90,
+                                clipBehavior: Clip.antiAlias,
+                                decoration: const BoxDecoration(
+                                  borderRadius: BorderRadius.horizontal(left: Radius.circular(15)),
+                                ),
+                                child: Image.network(t.imageUrl, fit: BoxFit.cover),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      t.name,
+                                      style: TextStyle(
+                                        color: isSelected ? AppColors.gold : AppColors.textPrimary,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      t.desc,
+                                      style: const TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 11,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Radio<String>(
+                                value: t.id,
+                                groupValue: _selectedTemplateId,
+                                activeColor: AppColors.gold,
+                                onChanged: (val) {
+                                  setState(() {
+                                    _selectedTemplateId = val;
+                                  });
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                            ],
                           ),
                         ),
                       );
                     },
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 28),
 
-                  // 4. KREDİ ÖZET PANELİ
+                  // 4. ORTAK KOMPOZİSYON DETAYLARI
+                  _buildSectionHeader('Ortak Kompozisyon Detayları (İsteğe Bağlı)'),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _extraDetailsController,
+                    maxLines: 2,
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: AppColors.surface,
+                      hintText: 'Tüm görsellere uygulanacak ekstra stil detayları yazın...\nÖrn: Bölgesel ışıklar, gölge yumuşatması, 8k mücevher çekimi',
+                      hintStyle: const TextStyle(color: Colors.white24, fontSize: 12),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.divider),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.gold),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // 5. KREDİ ÖZET PANELİ
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -463,6 +687,7 @@ class _MockTemplate {
   final String id;
   final String name;
   final String desc;
+  final String imageUrl;
 
-  _MockTemplate({required this.id, required this.name, required this.desc});
+  _MockTemplate({required this.id, required this.name, required this.desc, required this.imageUrl});
 }

@@ -1,11 +1,21 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'app_colors.dart';
 import 'credits_provider.dart';
 
 class InspirationBoardScreen extends ConsumerStatefulWidget {
-  const InspirationBoardScreen({super.key});
+  final int? initialTab;
+  final String? initialPrompt;
+
+  const InspirationBoardScreen({
+    super.key,
+    this.initialTab,
+    this.initialPrompt,
+  });
 
   @override
   ConsumerState<InspirationBoardScreen> createState() => _InspirationBoardScreenState();
@@ -17,10 +27,37 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
   String? _selectedStyleUrl;
   String? _selectedStyleName;
 
+  int _selectedStyleTab = 0; // 0: Hazır, 1: Görsel Yükle, 2: Link, 3: Tarif Yaz
+  final TextEditingController _styleUrlController = TextEditingController();
+  final TextEditingController _stylePromptController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialTab != null) {
+      _selectedStyleTab = widget.initialTab!;
+    }
+    if (widget.initialPrompt != null) {
+      _stylePromptController.text = widget.initialPrompt!;
+      _selectedStyleTab = 3; // Swaps to prompt mode
+      _selectedStyleUrl = 'prompt_mode';
+      _selectedStyleName = 'Metin Tarifi: ${widget.initialPrompt}';
+    }
+  }
+
+  @override
+  void dispose() {
+    _styleUrlController.dispose();
+    _stylePromptController.dispose();
+    super.dispose();
+  }
+
   // Fine-tuning slider parameters
   double _lightIntensity = 0.85;
   double _backgroundMatch = 0.75;
   double _colorHarmony = 0.90;
+  String _selectedRatio = '1:1 Kare';
+  String _selectedRes = '4K Ultra HD';
 
   // Mock product option
   final String _mockProductUrl = 'https://images.unsplash.com/photo-1598560917505-59a3ad559071?q=80&w=400&auto=format&fit=crop';
@@ -50,12 +87,76 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
     ),
   ];
 
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickImage(ImageSource source, bool isProduct) async {
+    try {
+      final XFile? image = await _picker.pickImage(source: source);
+      if (image != null) {
+        setState(() {
+          if (isProduct) {
+            _selectedProductUrl = image.path;
+          } else {
+            _selectedStyleUrl = image.path;
+            _selectedStyleName = 'Galeriden Özel Stil';
+          }
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(isProduct ? 'Ürün görseli başarıyla eklendi.' : 'Stil referans görseli başarıyla yüklendi.')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Görsel seçilemedi: $e')),
+      );
+    }
+  }
+
   void _selectProduct() {
-    setState(() {
-      _selectedProductUrl = _mockProductUrl; // Simulated pick
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ürün görseli başarıyla seçildi.')),
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined, color: AppColors.gold),
+                title: const Text('Galeriden Seç', style: TextStyle(color: AppColors.textPrimary)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.gallery, true);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined, color: AppColors.gold),
+                title: const Text('Kamera ile Çek', style: TextStyle(color: AppColors.textPrimary)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera, true);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.dashboard_outlined, color: AppColors.gold),
+                title: const Text('Örnek Görsel Kullan (Demo)', style: TextStyle(color: AppColors.textPrimary)),
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() {
+                    _selectedProductUrl = _mockProductUrl;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Örnek ürün görseli seçildi.')),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -67,12 +168,51 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
   }
 
   void _selectCustomStyle() {
-    setState(() {
-      _selectedStyleUrl = 'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?q=80&w=400&auto=format&fit=crop';
-      _selectedStyleName = 'Galeriden Özel Stil';
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Stil referans görseli başarıyla yüklendi.')),
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined, color: AppColors.gold),
+                title: const Text('Galeriden Seç', style: TextStyle(color: AppColors.textPrimary)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.gallery, false);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined, color: AppColors.gold),
+                title: const Text('Kamera ile Çek', style: TextStyle(color: AppColors.textPrimary)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera, false);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.dashboard_outlined, color: AppColors.gold),
+                title: const Text('Örnek Görsel Kullan (Demo)', style: TextStyle(color: AppColors.textPrimary)),
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() {
+                    _selectedStyleUrl = 'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?q=80&w=400&auto=format&fit=crop';
+                    _selectedStyleName = 'Örnek Referans Görsel';
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Örnek referans görseli seçildi.')),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -190,110 +330,26 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
                   const SizedBox(height: 32),
 
                   // ADIM 2: STİL SEÇİMİ
-                  _buildSectionHeader('2. İlham Alınacak Görseli Seçin'),
+                  _buildSectionHeader('2. İlham Alınacak Görseli/Tarifi Belirleyin'),
                   const SizedBox(height: 12),
-                  _buildUploadSlot(
-                    imageUrl: _selectedStyleName == 'Galeriden Özel Stil' ? _selectedStyleUrl : null,
-                    label: 'Instagram/Pinterest Görseli Yükle',
-                    subtitle: 'Örn: Beğendiğiniz lüks stüdyo kompozisyonu',
-                    onTap: _selectCustomStyle,
-                    icon: Icons.palette_outlined,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildTabButton(0, 'Hazır Stiller', Icons.auto_awesome_mosaic_outlined),
+                      _buildTabButton(1, 'Görsel Yükle', Icons.photo_library_outlined),
+                      _buildTabButton(2, 'Görsel Linki', Icons.link_rounded),
+                      _buildTabButton(3, 'Tarif Yaz', Icons.edit_note_rounded),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'veya Hazır Lüks Stillerden Seçin:',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  
-                  // HORIZONTAL PRESET SLIDER
-                  SizedBox(
-                    height: 140,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _presets.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 14),
-                      itemBuilder: (context, index) {
-                        final preset = _presets[index];
-                        final isSelected = _selectedStyleUrl == preset.imageUrl;
-
-                        return InkWell(
-                          onTap: () => _selectPreset(preset),
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            width: 130,
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isSelected ? AppColors.gold : AppColors.divider,
-                                width: isSelected ? 2 : 1,
-                              ),
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Expanded(
-                                  child: Image.network(preset.imageUrl, fit: BoxFit.cover),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4),
-                                  child: Text(
-                                    preset.name,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: isSelected ? AppColors.gold : AppColors.textPrimary,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                  const SizedBox(height: 16),
+                  _buildTabContent(),
                   const SizedBox(height: 32),
 
                   // ADIM 3: AI ANALİZ RAPORU
-                  if (_selectedStyleUrl != null && activePreset != null) ...[
-                    _buildSectionHeader('3. AI Tarz Analiz Raporu'),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.gold.withOpacity(0.3)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.psychology_outlined, color: AppColors.gold, size: 22),
-                              const SizedBox(width: 8),
-                              Text(
-                                '${_selectedStyleName} Stili Çözümlendi',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Divider(height: 24),
-                          _buildAnalysisRow('Işık Düzeni', activePreset.light),
-                          const SizedBox(height: 12),
-                          _buildAnalysisRow('Zemin & Sahne', activePreset.background),
-                          const SizedBox(height: 12),
-                          _buildAnalysisRow('Renk & Atmosfer', activePreset.mood),
-                        ],
-                      ),
+                  if (_selectedStyleUrl != null) ...[
+                    _buildStyleAnalysisSection(
+                      _selectedStyleUrl != null && _presets.any((p) => p.imageUrl == _selectedStyleUrl),
+                      activePreset,
                     ),
                     const SizedBox(height: 24),
                     _buildSectionHeader('4. Stil Aktarım Hassasiyeti (İnce Ayar)'),
@@ -336,6 +392,28 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
                                 _colorHarmony = val;
                               });
                             },
+                          ),
+                          const Divider(height: 32),
+                          const Text('GÖRSEL BOYUT (ASPECT RATIO)', style: TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              _buildSettingsChoiceChip('1:1 Kare', _selectedRatio, (val) => setState(() => _selectedRatio = val)),
+                              _buildSettingsChoiceChip('9:16 Hikaye', _selectedRatio, (val) => setState(() => _selectedRatio = val)),
+                              _buildSettingsChoiceChip('4:3 Klasik Web', _selectedRatio, (val) => setState(() => _selectedRatio = val)),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          const Text('ÇÖZÜNÜRLÜK KALİTESİ', style: TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              _buildSettingsChoiceChip('Standart (1K)', _selectedRes, (val) => setState(() => _selectedRes = val)),
+                              _buildSettingsChoiceChip('4K Ultra HD', _selectedRes, (val) => setState(() => _selectedRes = val)),
+                              _buildSettingsChoiceChip('Stüdyo Kalitesi', _selectedRes, (val) => setState(() => _selectedRes = val)),
+                            ],
                           ),
                         ],
                       ),
@@ -400,7 +478,7 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
             ? Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.network(imageUrl, fit: BoxFit.cover),
+                  _buildImageWidget(imageUrl),
                   Positioned(
                     top: 10,
                     right: 10,
@@ -432,6 +510,409 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
     );
   }
 
+  Widget _buildImageWidget(String path) {
+    if (path.startsWith('http') || path.startsWith('blob')) {
+      return Image.network(path, fit: BoxFit.cover);
+    } else {
+      if (kIsWeb) {
+        return Image.network(path, fit: BoxFit.cover);
+      } else {
+        return Image.file(File(path), fit: BoxFit.cover);
+      }
+    }
+  }
+
+  Widget _buildTabButton(int index, String label, IconData icon) {
+    final isSelected = _selectedStyleTab == index;
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _selectedStyleTab = index;
+            });
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.gold.withOpacity(0.12) : AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected ? AppColors.gold : AppColors.divider,
+                width: 1,
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: isSelected ? AppColors.gold : AppColors.textSecondary, size: 18),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isSelected ? AppColors.gold : AppColors.textSecondary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabContent() {
+    switch (_selectedStyleTab) {
+      case 0: // Hazır Stiller
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Aşağıdaki lüks stillerden birini seçin:',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 140,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _presets.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 14),
+                itemBuilder: (context, index) {
+                  final preset = _presets[index];
+                  final isSelected = _selectedStyleUrl == preset.imageUrl;
+
+                  return InkWell(
+                    onTap: () => _selectPreset(preset),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      width: 130,
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSelected ? AppColors.gold : AppColors.divider,
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: Image.network(preset.imageUrl, fit: BoxFit.cover),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4),
+                            child: Text(
+                              preset.name,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: isSelected ? AppColors.gold : AppColors.textPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      case 1: // Görsel Yükle
+        return _buildUploadSlot(
+          imageUrl: _selectedStyleName == 'Galeriden Özel Stil' ? _selectedStyleUrl : null,
+          label: 'Görsel Yükle (Galeri / Kamera)',
+          subtitle: 'Kendi referans görselinizi yükleyin',
+          onTap: _selectCustomStyle,
+          icon: Icons.photo_library_outlined,
+        );
+      case 2: // Görsel Linki Gir
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _styleUrlController,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                decoration: InputDecoration(
+                  labelText: 'Görsel veya Paylaşım Linki',
+                  labelStyle: const TextStyle(color: AppColors.textSecondary),
+                  hintText: 'Instagram, Pinterest veya web görsel linki yapıştırın...',
+                  hintStyle: const TextStyle(color: Colors.white24),
+                  prefixIcon: const Icon(Icons.link, color: AppColors.gold),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.divider),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.gold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold,
+                  foregroundColor: AppColors.textOnGold,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onPressed: () {
+                  final text = _styleUrlController.text.trim();
+                  if (text.isEmpty) return;
+                  setState(() {
+                    _selectedStyleUrl = text;
+                    _selectedStyleName = 'Web Linkinden Stil';
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Görsel linki başarıyla uygulandı!')),
+                  );
+                },
+                child: const Text('Linki Uygula', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+              if (_selectedStyleName == 'Web Linkinden Stil' && _selectedStyleUrl != null) ...[
+                const SizedBox(height: 16),
+                const Text(
+                  'Uygulanan Link Önizlemesi:',
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  height: 120,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: _selectedStyleUrl!.startsWith('http')
+                      ? Image.network(
+                          _selectedStyleUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: Colors.black38,
+                            child: const Center(
+                              child: Text(
+                                'Önizleme yüklenemedi (Doğrudan resim linki olmayabilir)',
+                                style: TextStyle(color: Colors.redAccent, fontSize: 11),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          color: Colors.black38,
+                          child: Center(
+                            child: Text(
+                              _selectedStyleUrl!,
+                              style: const TextStyle(color: Colors.white70, fontSize: 11),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                ),
+              ]
+            ],
+          ),
+        );
+      case 3: // Tarif Yaz
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _stylePromptController,
+                maxLines: 3,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                decoration: InputDecoration(
+                  labelText: 'Stil / Sahne Tarifi',
+                  labelStyle: const TextStyle(color: AppColors.textSecondary),
+                  hintText: 'Yapay zekanın oluşturacağı arka plan ve ışık düzenini tarif edin...\nÖrn: Siyah parlak zemin üzerinde, tepeden vuran odak spot ışığı...',
+                  hintStyle: const TextStyle(color: Colors.white24),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.divider),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.gold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold,
+                  foregroundColor: AppColors.textOnGold,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onPressed: () {
+                  final text = _stylePromptController.text.trim();
+                  if (text.isEmpty) return;
+                  setState(() {
+                    _selectedStyleUrl = 'prompt_mode';
+                    _selectedStyleName = 'Metin Tarifi: $text';
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Stil tarifi başarıyla uygulandı!')),
+                  );
+                },
+                child: const Text('Tarifi Uygula', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+              if (_selectedStyleUrl == 'prompt_mode' && _selectedStyleName != null) ...[
+                const SizedBox(height: 16),
+                const Text(
+                  'Aktif Stil Tarifi:',
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.black38,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.edit_note_rounded, color: AppColors.gold, size: 24),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _selectedStyleName!.replaceAll('Metin Tarifi: ', ''),
+                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ]
+            ],
+          ),
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildStyleAnalysisSection(bool isPreset, dynamic activePreset) {
+    if (isPreset && activePreset != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader('3. AI Tarz Analiz Raporu'),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.gold.withOpacity(0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.psychology_outlined, color: AppColors.gold, size: 22),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${_selectedStyleName} Stili Çözümlendi',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 24),
+                _buildAnalysisRow('Işık Düzeni', activePreset.light),
+                const SizedBox(height: 12),
+                _buildAnalysisRow('Zemin & Sahne', activePreset.background),
+                const SizedBox(height: 12),
+                _buildAnalysisRow('Renk & Atmosfer', activePreset.mood),
+              ],
+            ),
+          ),
+        ],
+      );
+    } else {
+      final isPrompt = _selectedStyleUrl == 'prompt_mode';
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader('3. AI Tarz Analiz Raporu'),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.gold.withOpacity(0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.psychology_outlined, color: AppColors.gold, size: 22),
+                    const SizedBox(width: 8),
+                    Text(
+                      isPrompt ? 'Yazılı Tarif Analiz Edildi' : 'Özel Görsel Analiz Edildi',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 24),
+                _buildAnalysisRow(
+                  isPrompt ? 'Stil Motoru' : 'Stil Analizör',
+                  isPrompt 
+                      ? 'Yazdığınız tarif doğrudan yapay zeka görsel motoruna yönlendirilecek.'
+                      : 'Referans görseldeki sahne kompozisyonu, ışık açıları ve renk tonları çıkarıldı.',
+                ),
+                const SizedBox(height: 12),
+                _buildAnalysisRow(
+                  'Kararlılık',
+                  isPrompt ? 'Yüksek (Metinsel Odak)' : 'Dinamik (%92 Uyum Oranı)',
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+  }
+
   Widget _buildAnalysisRow(String label, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -450,6 +931,27 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSettingsChoiceChip(String label, String groupValue, ValueChanged<String> onSelected) {
+    final isSelected = label == groupValue;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (_) => onSelected(label),
+      selectedColor: AppColors.gold.withOpacity(0.12),
+      backgroundColor: Colors.transparent,
+      labelStyle: TextStyle(
+        color: isSelected ? AppColors.gold : AppColors.textSecondary,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        fontSize: 11,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: isSelected ? AppColors.gold : AppColors.divider),
+      ),
+      showCheckmark: false,
     );
   }
 

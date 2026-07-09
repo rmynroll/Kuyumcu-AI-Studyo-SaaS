@@ -111,7 +111,7 @@ class SettingsScreen extends ConsumerWidget {
                     icon: Icons.business_center_outlined,
                     title: 'Firma Detayları',
                     subtitle: 'Vergi no, fatura adresleri ve firma bilgileri',
-                    onTap: () {},
+                    onTap: () => context.push('/premium/company-details'),
                   ),
                   _buildSettingsTile(
                     icon: Icons.palette_outlined,
@@ -123,13 +123,13 @@ class SettingsScreen extends ConsumerWidget {
                     icon: Icons.notifications_active_outlined,
                     title: 'Bildirim Tercihleri',
                     subtitle: 'SMS, e-posta ve anlık bildirim ayarları',
-                    onTap: () {},
+                    onTap: () => context.push('/premium/notification-preferences'),
                   ),
                   _buildSettingsTile(
                     icon: Icons.security_outlined,
                     title: 'Güvenlik',
                     subtitle: 'Şifre değiştirme ve iki adımlı doğrulama',
-                    onTap: () {},
+                    onTap: () => context.push('/premium/security'),
                   ),
                   const SizedBox(height: 24),
 
@@ -138,7 +138,7 @@ class SettingsScreen extends ConsumerWidget {
                     icon: Icons.api_rounded,
                     title: 'API Anahtarları',
                     subtitle: 'E-ticaret entegrasyonu için API bağlantıları',
-                    onTap: () {},
+                    onTap: () => context.push('/premium/api-keys'),
                   ),
                   _buildSettingsTile(
                     icon: Icons.circle_outlined,
@@ -150,13 +150,13 @@ class SettingsScreen extends ConsumerWidget {
                     icon: Icons.help_outline_rounded,
                     title: 'Destek ve Yardım',
                     subtitle: 'Sıkça sorulan sorular ve canlı destek',
-                    onTap: () {},
+                    onTap: () => context.push('/premium/support'),
                   ),
                   _buildSettingsTile(
                     icon: Icons.info_outline_rounded,
                     title: 'Hakkında',
                     subtitle: 'Kuyumcu AI Stüdyo v1.2.0',
-                    onTap: () {},
+                    onTap: () => context.push('/premium/about'),
                   ),
                   const SizedBox(height: 40),
 
