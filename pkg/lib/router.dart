@@ -23,6 +23,7 @@ import 'package:kuyumcu_flutter/security_screen.dart';
 import 'package:kuyumcu_flutter/api_keys_screen.dart';
 import 'package:kuyumcu_flutter/support_help_screen.dart';
 import 'package:kuyumcu_flutter/about_screen.dart';
+import 'package:kuyumcu_flutter/product_3d_viewer_screen.dart';
 
 /// Uygulamanın tüm route'ları tek yerde tanımlanır.
 ///
@@ -173,6 +174,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/products/upload',
         builder: (context, state) => const ProductUploadScreen(),
+      ),
+      GoRoute(
+        path: '/products/:id/3d',
+        builder: (context, state) => Product3DViewerScreen(
+          productId: state.pathParameters['id']!,
+        ),
       ),
       GoRoute(
         path: '/generation/template',

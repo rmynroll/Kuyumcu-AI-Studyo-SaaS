@@ -47,7 +47,8 @@ class TokenStoreScreen extends ConsumerWidget {
                   // 2. KREDİ PAKETLERİ BAŞLIĞI
                   Row(
                     children: [
-                      const Icon(Icons.shopping_bag_outlined, color: AppColors.gold, size: 20),
+                      const Icon(Icons.shopping_bag_outlined,
+                          color: AppColors.gold, size: 20),
                       const SizedBox(width: 8),
                       Text(
                         'Kredi Paketleri',
@@ -67,7 +68,8 @@ class TokenStoreScreen extends ConsumerWidget {
                   // 4. KREDİ GEÇMİŞİ BAŞLIĞI
                   Row(
                     children: [
-                      const Icon(Icons.history_rounded, color: AppColors.gold, size: 20),
+                      const Icon(Icons.history_rounded,
+                          color: AppColors.gold, size: 20),
                       const SizedBox(width: 8),
                       Text(
                         'Kredi Harcama Geçmişi',
@@ -131,7 +133,8 @@ class _BalanceCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.gold.withOpacity(0.1),
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.gold.withOpacity(0.3), width: 1),
+              border:
+                  Border.all(color: AppColors.gold.withOpacity(0.3), width: 1),
             ),
             child: const Icon(
               Icons.diamond_rounded,
@@ -282,7 +285,8 @@ class _PackageCard extends ConsumerWidget {
                       ),
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                        icon: const Icon(Icons.close,
+                            color: AppColors.textSecondary),
                       ),
                     ],
                   ),
@@ -358,8 +362,9 @@ class _PackageCard extends ConsumerWidget {
                           isLoading = true;
                         });
                         // Simulate payment processing
-                        await Future.delayed(const Duration(seconds: 1500 ~/ 1000));
-                        
+                        await Future.delayed(
+                            const Duration(seconds: 1500 ~/ 1000));
+
                         ref.read(creditsProvider.notifier).addCredits(
                               package.credits,
                               package.name,
@@ -372,12 +377,15 @@ class _PackageCard extends ConsumerWidget {
                               backgroundColor: AppColors.success,
                               content: Row(
                                 children: [
-                                  const Icon(Icons.check_circle_outline, color: Colors.white),
+                                  const Icon(Icons.check_circle_outline,
+                                      color: Colors.white),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Text(
                                       'Teşekkürler! ${package.credits} kredi başarıyla hesabınıza eklendi.',
-                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600),
                                     ),
                                   ),
                                 ],
@@ -388,7 +396,8 @@ class _PackageCard extends ConsumerWidget {
                       },
                       child: const Text(
                         'Güvenli Ödeme Yap',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
                   const SizedBox(height: 12),
@@ -440,11 +449,13 @@ class _PackageCard extends ConsumerWidget {
                     ),
                     if (package.isPopular)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: AppColors.gold.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.gold.withOpacity(0.4), width: 1),
+                          border: Border.all(
+                              color: AppColors.gold.withOpacity(0.4), width: 1),
                         ),
                         child: const Text(
                           'POPÜLER',
@@ -471,7 +482,8 @@ class _PackageCard extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.diamond_rounded, color: AppColors.gold, size: 22),
+                        const Icon(Icons.diamond_rounded,
+                            color: AppColors.gold, size: 22),
                         const SizedBox(width: 6),
                         Text(
                           '${package.credits} Kredi',
@@ -485,8 +497,11 @@ class _PackageCard extends ConsumerWidget {
                     ),
                     TextButton(
                       style: TextButton.styleFrom(
-                        backgroundColor: package.isPopular ? AppColors.gold : AppColors.surfaceElevated,
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                        backgroundColor: package.isPopular
+                            ? AppColors.gold
+                            : AppColors.surfaceElevated,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 18, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -495,7 +510,9 @@ class _PackageCard extends ConsumerWidget {
                       child: Text(
                         package.price,
                         style: TextStyle(
-                          color: package.isPopular ? AppColors.textOnGold : AppColors.gold,
+                          color: package.isPopular
+                              ? AppColors.textOnGold
+                              : AppColors.gold,
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
                         ),
@@ -560,8 +577,11 @@ class _HistoryList extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  isPositive ? Icons.add_circle_outline : Icons.remove_circle_outline,
-                  color: isPositive ? AppColors.success : AppColors.textSecondary,
+                  isPositive
+                      ? Icons.add_circle_outline
+                      : Icons.remove_circle_outline,
+                  color:
+                      isPositive ? AppColors.success : AppColors.textSecondary,
                   size: 20,
                 ),
               ),
@@ -598,7 +618,8 @@ class _HistoryList extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              const Icon(Icons.diamond_rounded, color: AppColors.gold, size: 14),
+              const Icon(Icons.diamond_rounded,
+                  color: AppColors.gold, size: 14),
             ],
           ),
         );

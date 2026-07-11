@@ -2,28 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'app_colors.dart';
-
-class JewelryItem {
-  final String id;
-  final String title;
-  final String imageUrl;
-  final String originalImageUrl;
-  final String status; // 'completed', 'processing', 'failed'
-  final DateTime date;
-  final int qaScore;
-  final bool isRefunded;
-
-  JewelryItem({
-    required this.id,
-    required this.title,
-    required this.imageUrl,
-    required this.originalImageUrl,
-    required this.status,
-    required this.date,
-    this.qaScore = 100,
-    this.isRefunded = false,
-  });
-}
+import 'product.dart';
 
 class ResultsGalleryScreen extends ConsumerStatefulWidget {
   const ResultsGalleryScreen({super.key});
@@ -38,62 +17,10 @@ class _ResultsGalleryScreenState extends ConsumerState<ResultsGalleryScreen> {
   
   String _searchQuery = '';
   String _selectedStatusFilter = 'Tümü';
-  
-  late List<JewelryItem> _itemsList;
 
   @override
   void initState() {
     super.initState();
-    _itemsList = [
-      JewelryItem(
-        id: '1',
-        title: 'Altın Yakut Yüzük',
-        originalImageUrl: 'https://images.unsplash.com/photo-1598560917505-59a3ad559071?q=80&w=400&auto=format&fit=crop',
-        imageUrl: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=400&auto=format&fit=crop',
-        status: 'completed',
-        date: DateTime.now().subtract(const Duration(hours: 1)),
-        qaScore: 100,
-        isRefunded: false,
-      ),
-      JewelryItem(
-        id: '2',
-        title: 'Elmas Baget Yüzük',
-        originalImageUrl: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?q=80&w=400&auto=format&fit=crop',
-        imageUrl: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?q=80&w=400&auto=format&fit=crop',
-        status: 'completed',
-        date: DateTime.now().subtract(const Duration(hours: 4)),
-        qaScore: 82,
-        isRefunded: true,
-      ),
-      JewelryItem(
-        id: '3',
-        title: 'Kuyumcu Gerdanlık',
-        originalImageUrl: 'https://images.unsplash.com/photo-1611085583191-a3b1a3a355db?q=80&w=400&auto=format&fit=crop',
-        imageUrl: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=400&auto=format&fit=crop',
-        status: 'completed',
-        date: DateTime.now().subtract(const Duration(days: 1)),
-        qaScore: 98,
-        isRefunded: false,
-      ),
-      JewelryItem(
-        id: '4',
-        title: 'Safir Taş Kolye',
-        originalImageUrl: 'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?q=80&w=400&auto=format&fit=crop',
-        imageUrl: 'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?q=80&w=400&auto=format&fit=crop',
-        status: 'processing',
-        date: DateTime.now(),
-        qaScore: 0,
-        isRefunded: false,
-      ),
-      JewelryItem(
-        id: '5',
-        title: 'Altın Zincir Bileklik',
-        originalImageUrl: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?q=80&w=400&auto=format&fit=crop',
-        imageUrl: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?q=80&w=400&auto=format&fit=crop',
-        status: 'failed',
-        date: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-    ];
   }
 
   void _showDeleteConfirmDialog() {
@@ -112,8 +39,8 @@ class _ResultsGalleryScreenState extends ConsumerState<ResultsGalleryScreen> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
               onPressed: () {
+                ref.read(productsProvider.notifier).deleteProducts(_selectedItemIds.toList());
                 setState(() {
-                  _itemsList.removeWhere((item) => _selectedItemIds.contains(item.id));
                   _selectedItemIds.clear();
                   _isSelectionMode = false;
                 });
@@ -132,7 +59,8 @@ class _ResultsGalleryScreenState extends ConsumerState<ResultsGalleryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredItems = _itemsList.where((item) {
+    final products = ref.watch(productsProvider);
+    final filteredItems = products.where((item) {
       final matchesSearch = item.title.toLowerCase().contains(_searchQuery.toLowerCase());
       if (!matchesSearch) return false;
       if (_selectedStatusFilter == 'Tümü') return true;
@@ -190,7 +118,7 @@ class _ResultsGalleryScreenState extends ConsumerState<ResultsGalleryScreen> {
                       onPressed: _selectedItemIds.isEmpty
                           ? null
                           : () {
-                              final selectedItems = _itemsList
+                              final selectedItems = products
                                   .where((item) => _selectedItemIds.contains(item.id))
                                   .toList();
                               _showWhatsAppExportDialog(context, selectedItems);
@@ -380,7 +308,7 @@ class _ResultsGalleryScreenState extends ConsumerState<ResultsGalleryScreen> {
     );
   }
 
-  void _showWhatsAppExportDialog(BuildContext context, List<JewelryItem> selectedItems) {
+  void _showWhatsAppExportDialog(BuildContext context, List<Product> selectedItems) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -388,7 +316,7 @@ class _ResultsGalleryScreenState extends ConsumerState<ResultsGalleryScreen> {
     );
   }
 
-  void _showImageDetails(BuildContext context, JewelryItem item) {
+  void _showImageDetails(BuildContext context, Product item) {
     showDialog(
       context: context,
       builder: (context) {
@@ -439,6 +367,23 @@ class _ResultsGalleryScreenState extends ConsumerState<ResultsGalleryScreen> {
                     ),
                     const SizedBox(height: 24),
                     if (item.status == 'completed') ...[
+                      if (item.glbUrl != null && item.glbUrl!.isNotEmpty) ...[
+                        OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.gold, width: 1.2),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            minimumSize: const Size.fromHeight(48),
+                            foregroundColor: AppColors.gold,
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            context.push('/products/${item.id}/3d');
+                          },
+                          icon: const Icon(Icons.view_in_ar, color: AppColors.gold, size: 20),
+                          label: const Text('3D İncele', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.transparent,
@@ -583,7 +528,7 @@ class _ResultsGalleryScreenState extends ConsumerState<ResultsGalleryScreen> {
     );
   }
 
-  void _showB2b2cShareSheet(BuildContext context, JewelryItem item) {
+  void _showB2b2cShareSheet(BuildContext context, Product item) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -599,7 +544,7 @@ class _ResultsGalleryScreenState extends ConsumerState<ResultsGalleryScreen> {
 }
 
 class _B2b2cShareSheetContent extends StatefulWidget {
-  final JewelryItem item;
+  final Product item;
 
   const _B2b2cShareSheetContent({required this.item});
 
@@ -756,7 +701,7 @@ class _JewelryGalleryCard extends StatelessWidget {
     required this.onLongPress,
   });
 
-  final JewelryItem item;
+  final Product item;
   final bool isSelectionMode;
   final bool isSelected;
   final VoidCallback onTap;
@@ -843,7 +788,7 @@ class _JewelryGalleryCard extends StatelessWidget {
 }
 
 class _WhatsAppExportDialog extends StatefulWidget {
-  final List<JewelryItem> items;
+  final List<Product> items;
 
   const _WhatsAppExportDialog({required this.items});
 
@@ -1290,7 +1235,7 @@ class _WhatsAppExportDialogState extends State<_WhatsAppExportDialog> {
 class _StatusBadge extends StatelessWidget {
   const _StatusBadge({required this.item});
 
-  final JewelryItem item;
+  final Product item;
 
   @override
   Widget build(BuildContext context) {
