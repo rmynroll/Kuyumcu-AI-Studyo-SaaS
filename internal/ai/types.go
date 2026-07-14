@@ -9,10 +9,11 @@ import (
 type ProviderType string
 
 const (
-	ProviderTypeFalAI    ProviderType = "fal_ai"
-	ProviderTypeReplicate ProviderType = "replicate"
-	ProviderTypeClaude   ProviderType = "claude"
-	ProviderTypeOpenAI   ProviderType = "openai"
+	ProviderTypeFalAI       ProviderType = "fal_ai"
+	ProviderTypeReplicate   ProviderType = "replicate"
+	ProviderTypeClaude      ProviderType = "claude"
+	ProviderTypeOpenAI      ProviderType = "openai"
+	ProviderTypeLocalPython ProviderType = "local_python"
 )
 
 // GenerationMode, görsel üretim modunu tanımlar
@@ -116,6 +117,7 @@ type PromptTemplate struct {
 type SegmentationResult struct {
 	MaskImageURL       string    `json:"mask_image_url"`         // PNG mask
 	CleanJewelryURL    string    `json:"clean_jewelry_url"`      // Arka plan temizlenmiş takı
+	InpaintingMaskURL  string    `json:"inpainting_mask_url"`    // Dar bantlı inpainting maskesi (opsiyonel)
 	SegmentationScore  float32   `json:"segmentation_score"`    // 0-1 confidence
 	BoundingBox        [4]int    `json:"bounding_box"`          // [x, y, width, height]
 	MaskPixelArea      int       `json:"mask_pixel_area"`       // Mask'ın pixel alanı
