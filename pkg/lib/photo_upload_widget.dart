@@ -44,13 +44,22 @@ class _PhotoUploadWidgetState extends ConsumerState<PhotoUploadWidget> {
 
     // 2. Prompt kelimelerine göre gerçekçi arka plan şablonunu belirle
     final prompt = customPrompt.toLowerCase();
-    String styleUrl = 'https://images.unsplash.com/photo-1533090161767-e6ffed986c88?q=80&w=400&auto=format&fit=crop'; // Varsayılan: Lüks İtalyan Mermer
-    if (prompt.contains('kadife') || prompt.contains('kutusu') || prompt.contains('box') || prompt.contains('velvet') || prompt.contains('siyah') || prompt.contains('black')) {
-      styleUrl = 'https://images.unsplash.com/photo-1502239608882-93b729c6af43?q=80&w=400&auto=format&fit=crop'; // Siyah Kadife/Doku
+    String styleUrl = 'https://images.unsplash.com/photo-1533090161767-e6ffed986c88?q=80&w=400&auto=format&fit=crop'; // Varsayılan: Mermer
+    
+    if (prompt.contains('kırmızı') || prompt.contains('red') || prompt.contains('yakut kutu')) {
+      styleUrl = 'https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?q=80&w=400&auto=format&fit=crop';
+    } else if (prompt.contains('ahşap') || prompt.contains('wood') || prompt.contains('kahve') || prompt.contains('meşe')) {
+      styleUrl = 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=400&auto=format&fit=crop';
+    } else if (prompt.contains('mavi') || prompt.contains('blue') || prompt.contains('lacivert') || prompt.contains('kraliyet')) {
+      styleUrl = 'https://images.unsplash.com/photo-1512909006721-3d6018887383?q=80&w=400&auto=format&fit=crop';
+    } else if (prompt.contains('siyah') || prompt.contains('black') || prompt.contains('kadife') || prompt.contains('velvet')) {
+      styleUrl = 'https://images.unsplash.com/photo-1502239608882-93b729c6af43?q=80&w=400&auto=format&fit=crop';
+    } else if (prompt.contains('boyun') || prompt.contains('neck') || prompt.contains('kolye') || prompt.contains('gerdan') || prompt.contains('yüz') || prompt.contains('face') || prompt.contains('model portre')) {
+      styleUrl = 'https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=400&auto=format&fit=crop';
     } else if (prompt.contains('el') || prompt.contains('parmak') || prompt.contains('hand') || prompt.contains('finger') || prompt.contains('manken') || prompt.contains('model')) {
-      styleUrl = 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?q=80&w=400&auto=format&fit=crop'; // Manken Eli (Yüzük)
+      styleUrl = 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?q=80&w=400&auto=format&fit=crop';
     } else if (prompt.contains('ışık') || prompt.contains('güneş') || prompt.contains('sun') || prompt.contains('light') || prompt.contains('gün')) {
-      styleUrl = 'https://images.unsplash.com/photo-1541123437800-1bb1317badc2?q=80&w=400&auto=format&fit=crop'; // Doğal Gün Işığı Taş
+      styleUrl = 'https://images.unsplash.com/photo-1541123437800-1bb1317badc2?q=80&w=400&auto=format&fit=crop';
     }
 
     // 3. Görsel üretim işini repoda oluştur

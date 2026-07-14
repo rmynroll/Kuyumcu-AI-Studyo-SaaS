@@ -179,10 +179,28 @@ class _ActionList extends StatelessWidget {
         onTap: () => context.push('/products/upload'),
       ),
       AppPrimaryActionCard(
+        icon: Icons.face_retouching_natural_outlined,
+        label: 'Yapay Zeka Manken Stüdyosu',
+        subtitle: 'Yüzükleri el mankeninde, kolyeleri gerdanda görün',
+        onTap: () => context.push('/generation/inspiration?tab=3'),
+      ),
+      AppPrimaryActionCard(
+        icon: Icons.inventory_2_outlined,
+        label: 'Lüks Kutu Sunum Tasarımı',
+        subtitle: 'Takınızı kadife, ahşap veya kraliyet kutularına yerleştirin',
+        onTap: () => context.push('/generation/inspiration?tab=2'),
+      ),
+      AppPrimaryActionCard(
+        icon: Icons.wallpaper_rounded,
+        label: 'Akıllı Arka Plan Değiştirici',
+        subtitle: 'Yapay zeka ile stüdyo fonu ve spot ışığı tarif edin',
+        onTap: () => context.push('/generation/inspiration?tab=4'),
+      ),
+      AppPrimaryActionCard(
         icon: Icons.palette_outlined,
         label: 'İlham Panosu (Stil Aktarımı)',
         subtitle: 'Instagram/Pinterest stilini kendi ürününe uygula',
-        onTap: () => context.push('/generation/inspiration'),
+        onTap: () => context.push('/generation/inspiration?tab=0'),
       ),
       AppPrimaryActionCard(
         icon: Icons.auto_awesome_motion_outlined,
@@ -213,12 +231,6 @@ class _ActionList extends StatelessWidget {
         label: 'Canlı Altın Takip',
         subtitle: 'Canlı altın fiyatları ve robot hesaplayıcı',
         onTap: () => context.push('/premium/gold-tracking'),
-      ),
-      AppPrimaryActionCard(
-        icon: Icons.auto_awesome_outlined,
-        label: 'Görsel Oluştur',
-        subtitle: 'Hazır şablon ya da örnek görselle üret',
-        onTap: () => context.push('/generation/mode'),
       ),
       AppPrimaryActionCard(
         icon: Icons.photo_library_outlined,

@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:io' show File;
-import 'dart:js' as js;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'web_download_helper.dart'
+    if (dart.library.js) 'web_download_helper_web.dart';
 import 'app_colors.dart';
 import 'credits_provider.dart';
 import 'generation_repository.dart';
@@ -71,6 +72,47 @@ class _QaPanelScreenState extends ConsumerState<QaPanelScreen> {
       final productUrl = queryParams['productUrl'] ?? '';
       final styleUrl = queryParams['styleUrl'] ?? '';
 
+      // Manken ve Kutu pozisyonlama algoritmaları
+      final isBox = styleUrl.contains('box') ||
+          styleUrl.contains('kutu') ||
+          styleUrl.contains('photo-1601121141461') ||
+          styleUrl.contains('photo-1549465220-1a8b9238cd48') ||
+          styleUrl.contains('photo-1512909006721') ||
+          styleUrl.contains('photo-1502239608882');
+      
+      final isHandModel = styleUrl.contains('photo-1602751584552') || styleUrl.contains('model_hand');
+      final isNeckModel = styleUrl.contains('photo-1544816155') || styleUrl.contains('neck') || styleUrl.contains('face');
+
+      double scale = 0.58;
+      Alignment alignment = Alignment.center;
+      Offset shadowOffset = Offset.zero;
+      double shadowBlur = 24.0;
+      double shadowSpread = 3.0;
+      double opacity = 0.35;
+
+      if (isBox) {
+        scale = 0.34; // Kutunun içine sığması için küçültüyoruz
+        alignment = const Alignment(0.0, 0.1); // Yüzük yuvasının üstüne yerleşim
+        shadowOffset = const Offset(0.0, 6.0); // Aşağı doğru derinlik gölgesi
+        shadowBlur = 12.0;
+        shadowSpread = 1.0;
+        opacity = 0.6;
+      } else if (isHandModel) {
+        scale = 0.16; // Manken parmağına tam oturacak ölçek
+        alignment = const Alignment(0.04, -0.05); // Yüzük parmağının boğumuna yerleşim
+        shadowOffset = const Offset(1.0, 2.0);
+        shadowBlur = 6.0;
+        shadowSpread = 0.5;
+        opacity = 0.45;
+      } else if (isNeckModel) {
+        scale = 0.28; // Gerdana yakışacak kolye/takı ölçeği
+        alignment = const Alignment(0.0, 0.38); // Köprücük kemiği bölgesine yerleşim
+        shadowOffset = const Offset(0.0, 4.0);
+        shadowBlur = 12.0;
+        shadowSpread = 1.0;
+        opacity = 0.4;
+      }
+
       return AspectRatio(
         aspectRatio: aspectRatio,
         child: Stack(
@@ -87,24 +129,34 @@ class _QaPanelScreenState extends ConsumerState<QaPanelScreen> {
                 ),
               ),
             ),
-            // Yerleştirilmiş ürün görseli
             Center(
-              child: FractionallySizedBox(
-                widthFactor: 0.58,
-                heightFactor: 0.58,
-                child: Container(
-                  decoration: BoxDecoration(
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.4),
-                        blurRadius: 24,
-                        spreadRadius: 3,
-                      )
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: _buildSingleImage(productUrl),
+              child: Align(
+                alignment: alignment,
+                child: FractionallySizedBox(
+                  widthFactor: scale,
+                  heightFactor: scale,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(opacity),
+                          blurRadius: shadowBlur,
+                          spreadRadius: shadowSpread,
+                          offset: shadowOffset,
+                        )
+                      ],
+                    ),
+                    // Beyaz/Açık renk arka planı filtre matrisiyle temizleyip
+                    // sadece takıyı bırakıyoruz (Arka Plan Kırpma / Background Keying)
+                    child: ColorFiltered(
+                      colorFilter: const ColorFilter.matrix(<double>[
+                        1, 0, 0, 0, 0,
+                        0, 1, 0, 0, 0,
+                        0, 0, 1, 0, 0,
+                        -1.8, -1.8, -1.8, 5.4, -0.9,
+                      ]),
+                      child: _buildSingleImage(productUrl),
+                    ),
                   ),
                 ),
               ),
@@ -119,6 +171,7 @@ class _QaPanelScreenState extends ConsumerState<QaPanelScreen> {
       child: _buildSingleImage(path),
     );
   }
+
 
   Widget _buildSingleImage(String path) {
     if (path.startsWith('http') || path.startsWith('blob')) {
@@ -146,9 +199,7 @@ class _QaPanelScreenState extends ConsumerState<QaPanelScreen> {
 
     if (kIsWeb) {
       try {
-        js.context.callMethod('eval', [
-          "var a = document.createElement('a'); a.href = '$url'; a.download = 'kuyumcu-ai-studyo.jpg'; document.body.appendChild(a); a.click(); document.body.removeChild(a);"
-        ]);
+        downloadImageWeb(url);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             backgroundColor: AppColors.success,
@@ -347,7 +398,6 @@ class _QaPanelScreenState extends ConsumerState<QaPanelScreen> {
                       },
                       child: const Text('Onayla ve Galeriye Dön', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
-                    const SizedBox(height: 12),
                     OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: AppColors.gold, width: 1.2),
@@ -363,6 +413,19 @@ class _QaPanelScreenState extends ConsumerState<QaPanelScreen> {
                       },
                       icon: const Icon(Icons.compare_arrows_rounded, color: AppColors.gold, size: 20),
                       label: const Text('Detaylı Önce / Sonra Kıyasla', style: TextStyle(color: AppColors.gold)),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.gold, width: 1.2),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        minimumSize: const Size.fromHeight(56),
+                      ),
+                      onPressed: () {
+                        context.push('/products/${widget.generationId}/3d');
+                      },
+                      icon: const Icon(Icons.view_in_ar_rounded, color: AppColors.gold, size: 20),
+                      label: const Text('Ürünün 3D Modelini İncele', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold)),
                     ),
                   ] else ...[
                     if (_isProcessingRefund)

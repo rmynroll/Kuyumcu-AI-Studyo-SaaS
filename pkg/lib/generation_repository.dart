@@ -32,13 +32,35 @@ class GenerationRepository {
   static final Map<String, String> _mockProductPresetOutputs = {
     // Lüks İtalyan (Boş mermer -> Gerçekçi yakut yüzük mermer üzerinde)
     'https://images.unsplash.com/photo-1533090161767-e6ffed986c88?q=80&w=400&auto=format&fit=crop': 
-        'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=400&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=600&auto=format&fit=crop',
     // Doğal Gün Işığı (Boş taş/ahşap -> Gerçekçi yüzük model elinde)
     'https://images.unsplash.com/photo-1541123437800-1bb1317badc2?q=80&w=400&auto=format&fit=crop':
-        'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?q=80&w=400&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?q=80&w=600&auto=format&fit=crop',
     // Siyah Kadife (Boş kadife -> Gerçekçi yüzük kadife kutuda)
     'https://images.unsplash.com/photo-1502239608882-93b729c6af43?q=80&w=400&auto=format&fit=crop':
-        'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=400&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=600&auto=format&fit=crop',
+    
+    // Kutu Seçimleri:
+    // Kırmızı Kadife Kutu -> Altın/Yakut yüzük kırmızı kadife kutuda
+    'https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?q=80&w=400&auto=format&fit=crop':
+        'https://images.unsplash.com/photo-1584302179602-e4c3d3fd629d?q=80&w=600&auto=format&fit=crop',
+    // Lüks Ahşap Kutu -> Yüzük el yapımı ahşap kutuda
+    'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=400&auto=format&fit=crop':
+        'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=600&auto=format&fit=crop',
+    // Kraliyet Mavisi Kutu -> Yüzük mavi kadife kutuda
+    'https://images.unsplash.com/photo-1512909006721-3d6018887383?q=80&w=400&auto=format&fit=crop':
+        'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=600&auto=format&fit=crop',
+    // Modern Siyah Kutu -> Yüzük mat siyah kutuda
+    'https://images.unsplash.com/photo-1502239608882-93b729c6af43?q=80&w=400&auto=format&fit=crop':
+        'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=600&auto=format&fit=crop',
+
+    // Yapay Zeka Mankenler:
+    // El Mankeni -> Yüzük model parmağında
+    'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?q=80&w=400&auto=format&fit=crop':
+        'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?q=80&w=600&auto=format&fit=crop',
+    // Yüz & Boyun Mankeni -> Gerdanlık model boynunda
+    'https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=400&auto=format&fit=crop':
+        'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=600&auto=format&fit=crop',
   };
 
   // UI şablon ID'lerini görsel URL'lerine çevirir (varsayılan temiz fonlar)
@@ -168,12 +190,12 @@ class GenerationRepository {
       final styleUrl = _generationStyleUrls[id] ?? '';
       
       String finalOutputUrl;
-      if (beforeUrl == _mockProductUrl) {
+      if (beforeUrl == _mockProductUrl && _mockProductPresetOutputs.containsKey(styleUrl)) {
         // Orijinal demo yüzüğü seçilmişse hazır pre-rendered görsele eşle
-        finalOutputUrl = _mockProductPresetOutputs[styleUrl] ?? styleUrl;
+        finalOutputUrl = _mockProductPresetOutputs[styleUrl]!;
       } else {
-        // Kullanıcı kendi görselini yüklemişse dinamik stack kompozit etiketini yapıştır
-        finalOutputUrl = 'composite:productUrl=${Uri.encodeComponent(beforeUrl)}&styleUrl=${Uri.encodeComponent(styleUrl)}';
+        // Kullanıcı kendi görselini yüklemişse veya özel bir arka plan/prompt girmişse dinamik stack kompozit etiketini yapıştır
+        finalOutputUrl = 'composite:productUrl=${Uri.encodeComponent(beforeUrl.isEmpty ? _mockProductUrl : beforeUrl)}&styleUrl=${Uri.encodeComponent(styleUrl)}';
       }
 
       outputs = [

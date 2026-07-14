@@ -28,9 +28,13 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
   String? _selectedStyleUrl;
   String? _selectedStyleName;
 
-  int _selectedStyleTab = 0; // 0: Hazır, 1: Görsel Yükle, 2: Link, 3: Tarif Yaz
+  int _selectedStyleTab = 0; // 0: Hazır, 1: Referans Yükle, 2: Kutu Seçimi, 3: Yapay Zeka Manken, 4: Serbest Tarif
   final TextEditingController _styleUrlController = TextEditingController();
   final TextEditingController _stylePromptController = TextEditingController();
+  final TextEditingController _boxPromptController = TextEditingController();
+  final TextEditingController _modelPromptController = TextEditingController();
+  int _selectedBoxIndex = 0;
+  int _selectedModelIndex = 0;
 
   @override
   void initState() {
@@ -40,7 +44,7 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
     }
     if (widget.initialPrompt != null) {
       _stylePromptController.text = widget.initialPrompt!;
-      _selectedStyleTab = 3; // Swaps to prompt mode
+      _selectedStyleTab = 4; // Swaps to free prompt mode (tab index 4)
       _selectedStyleUrl = 'prompt_mode';
       _selectedStyleName = 'Metin Tarifi: ${widget.initialPrompt}';
     }
@@ -50,6 +54,8 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
   void dispose() {
     _styleUrlController.dispose();
     _stylePromptController.dispose();
+    _boxPromptController.dispose();
+    _modelPromptController.dispose();
     super.dispose();
   }
 
@@ -85,6 +91,44 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
       light: 'Spot Tepe Işığı, Yüksek Kontrastlı Yansıma',
       background: 'Koyu Kadife Zemin',
       mood: 'Gizemli & Dramatik Lüks (%96 Kararlılık)',
+    ),
+  ];
+
+  // Kutu çeşitleri listesi
+  final List<_BoxPreset> _boxes = [
+    _BoxPreset(
+      name: 'Kırmızı Kadife Kutu',
+      imageUrl: 'https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?q=80&w=400&auto=format&fit=crop',
+      description: 'Lüks ve romantik kırmızı kadife doku, yumuşak kadife yüzük yatağı.',
+    ),
+    _BoxPreset(
+      name: 'Lüks Ahşap Kutu',
+      imageUrl: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=400&auto=format&fit=crop',
+      description: 'Ceviz ağacından el yapımı, mat cilalı doğal ahşap kutu.',
+    ),
+    _BoxPreset(
+      name: 'Kraliyet Mavisi Kutu',
+      imageUrl: 'https://images.unsplash.com/photo-1512909006721-3d6018887383?q=80&w=400&auto=format&fit=crop',
+      description: 'Koyu lacivert saten kaplama, asil ve göz alıcı kontrast sunumu.',
+    ),
+    _BoxPreset(
+      name: 'Modern Siyah Kutu',
+      imageUrl: 'https://images.unsplash.com/photo-1502239608882-93b729c6af43?q=80&w=400&auto=format&fit=crop',
+      description: 'Mat siyah minimalist kutu, dramatik stüdyo spot ışığı yansıması.',
+    ),
+  ];
+
+  // Yapay Zeka Manken listesi
+  final List<_ModelPreset> _models = [
+    _ModelPreset(
+      name: 'El Mankeni',
+      imageUrl: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?q=80&w=400&auto=format&fit=crop',
+      description: 'Zarif el mankeni duruşu. Yüzük, alyan ve bileklikler için idealdir.',
+    ),
+    _ModelPreset(
+      name: 'Yüz & Boyun Mankeni',
+      imageUrl: 'https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=400&auto=format&fit=crop',
+      description: 'Lüks portre ve dekolte planı. Kolye, gerdanlık ve küpeler için idealdir.',
     ),
   ];
 
@@ -275,9 +319,18 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
     String styleId = _selectedStyleUrl!;
     if (styleId == 'prompt_mode') {
       final prompt = _stylePromptController.text.toLowerCase();
-      styleId = 'https://images.unsplash.com/photo-1533090161767-e6ffed986c88?q=80&w=400&auto=format&fit=crop'; // Varsayılan: Mermer
-      if (prompt.contains('kadife') || prompt.contains('kutusu') || prompt.contains('box') || prompt.contains('velvet') || prompt.contains('siyah') || prompt.contains('black')) {
+      styleId = 'https://images.unsplash.com/photo-1533090161767-e6ffed986c88?q=80&w=400&auto=format&fit=crop'; // Default: marble
+      
+      if (prompt.contains('kırmızı') || prompt.contains('red') || prompt.contains('yakut kutu')) {
+        styleId = 'https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?q=80&w=400&auto=format&fit=crop';
+      } else if (prompt.contains('ahşap') || prompt.contains('wood') || prompt.contains('kahve') || prompt.contains('meşe')) {
+        styleId = 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=400&auto=format&fit=crop';
+      } else if (prompt.contains('mavi') || prompt.contains('blue') || prompt.contains('lacivert') || prompt.contains('kraliyet')) {
+        styleId = 'https://images.unsplash.com/photo-1512909006721-3d6018887383?q=80&w=400&auto=format&fit=crop';
+      } else if (prompt.contains('siyah') || prompt.contains('black') || prompt.contains('kadife') || prompt.contains('velvet')) {
         styleId = 'https://images.unsplash.com/photo-1502239608882-93b729c6af43?q=80&w=400&auto=format&fit=crop';
+      } else if (prompt.contains('boyun') || prompt.contains('neck') || prompt.contains('kolye') || prompt.contains('gerdan') || prompt.contains('yüz') || prompt.contains('face') || prompt.contains('model portre')) {
+        styleId = 'https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=400&auto=format&fit=crop';
       } else if (prompt.contains('el') || prompt.contains('parmak') || prompt.contains('hand') || prompt.contains('finger') || prompt.contains('manken') || prompt.contains('model')) {
         styleId = 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?q=80&w=400&auto=format&fit=crop';
       } else if (prompt.contains('ışık') || prompt.contains('güneş') || prompt.contains('sun') || prompt.contains('light') || prompt.contains('gün')) {
@@ -350,14 +403,18 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
                   // ADIM 2: STİL SEÇİMİ
                   _buildSectionHeader('2. İlham Alınacak Görseli/Tarifi Belirleyin'),
                   const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildTabButton(0, 'Hazır Stiller', Icons.auto_awesome_mosaic_outlined),
-                      _buildTabButton(1, 'Görsel Yükle', Icons.photo_library_outlined),
-                      _buildTabButton(2, 'Görsel Linki', Icons.link_rounded),
-                      _buildTabButton(3, 'Tarif Yaz', Icons.edit_note_rounded),
-                    ],
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        _buildTabButton(0, 'Hazır Stiller', Icons.auto_awesome_mosaic_outlined),
+                        _buildTabButton(1, 'Referans Yükle', Icons.photo_library_outlined),
+                        _buildTabButton(2, 'Kutu Seçimi', Icons.inventory_2_outlined),
+                        _buildTabButton(3, 'Manken Seçimi', Icons.face_retouching_natural_outlined),
+                        _buildTabButton(4, 'Serbest Tarif', Icons.edit_note_rounded),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                   _buildTabContent(),
@@ -542,42 +599,41 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
 
   Widget _buildTabButton(int index, String label, IconData icon) {
     final isSelected = _selectedStyleTab == index;
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-        child: InkWell(
-          onTap: () {
-            setState(() {
-              _selectedStyleTab = index;
-            });
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            decoration: BoxDecoration(
-              color: isSelected ? AppColors.gold.withOpacity(0.12) : AppColors.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected ? AppColors.gold : AppColors.divider,
-                width: 1,
-              ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _selectedStyleTab = index;
+          });
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 105,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.gold.withOpacity(0.12) : AppColors.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? AppColors.gold : AppColors.divider,
+              width: 1,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, color: isSelected ? AppColors.gold : AppColors.textSecondary, size: 18),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: isSelected ? AppColors.gold : AppColors.textSecondary,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: isSelected ? AppColors.gold : AppColors.textSecondary, size: 18),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? AppColors.gold : AppColors.textSecondary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
                 ),
-              ],
-            ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
       ),
@@ -646,15 +702,7 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
             ),
           ],
         );
-      case 1: // Görsel Yükle
-        return _buildUploadSlot(
-          imageUrl: _selectedStyleName == 'Galeriden Özel Stil' ? _selectedStyleUrl : null,
-          label: 'Görsel Yükle (Galeri / Kamera)',
-          subtitle: 'Kendi referans görselinizi yükleyin',
-          onTap: _selectCustomStyle,
-          icon: Icons.photo_library_outlined,
-        );
-      case 2: // Görsel Linki Gir
+      case 1: // Referans Yükle / Link Gir
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -665,13 +713,37 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const Text(
+                'Bir stil referans fotoğrafı yükleyin:',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              ),
+              const SizedBox(height: 10),
+              _buildUploadSlot(
+                imageUrl: _selectedStyleName == 'Galeriden Özel Stil' ? _selectedStyleUrl : null,
+                label: 'Görsel Yükle (Galeri / Kamera)',
+                subtitle: 'Referans görselinizi seçin',
+                onTap: _selectCustomStyle,
+                icon: Icons.photo_library_outlined,
+              ),
+              const SizedBox(height: 16),
+              const Row(
+                children: [
+                  Expanded(child: Divider(color: AppColors.divider)),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Text('VEYA', style: TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.bold)),
+                  ),
+                  Expanded(child: Divider(color: AppColors.divider)),
+                ],
+              ),
+              const SizedBox(height: 16),
               TextField(
                 controller: _styleUrlController,
                 style: const TextStyle(color: Colors.white, fontSize: 14),
                 decoration: InputDecoration(
-                  labelText: 'Görsel veya Paylaşım Linki',
+                  labelText: 'Web Görsel veya Paylaşım Linki',
                   labelStyle: const TextStyle(color: AppColors.textSecondary),
-                  hintText: 'Instagram, Pinterest veya web görsel linki yapıştırın...',
+                  hintText: 'Instagram, Pinterest veya web görsel linki...',
                   hintStyle: const TextStyle(color: Colors.white24),
                   prefixIcon: const Icon(Icons.link, color: AppColors.gold),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -750,7 +822,253 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
             ],
           ),
         );
-      case 3: // Tarif Yaz
+      case 2: // Kutu Seçimi
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Mücevherin yerleştirileceği kutu çeşidini seçin:',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 120,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _boxes.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    final box = _boxes[index];
+                    final isSelected = _selectedBoxIndex == index;
+
+                    return InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedBoxIndex = index;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: 110,
+                        decoration: BoxDecoration(
+                          color: Colors.black26,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected ? AppColors.gold : AppColors.divider,
+                            width: isSelected ? 2 : 1,
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: Image.network(box.imageUrl, fit: BoxFit.cover),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 4),
+                              child: Text(
+                                box.name,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: isSelected ? AppColors.gold : AppColors.textPrimary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 10,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _boxes[_selectedBoxIndex].description,
+                style: const TextStyle(color: AppColors.gold, fontSize: 11, fontStyle: FontStyle.italic),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _boxPromptController,
+                maxLines: 2,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                decoration: InputDecoration(
+                  labelText: 'Kutu İçi Detaylar (Prompt)',
+                  labelStyle: const TextStyle(color: AppColors.textSecondary),
+                  hintText: 'Örn: Işık kutunun iç kadifesine yansısın, kutu kapağı hafif aralık dursun...',
+                  hintStyle: const TextStyle(color: Colors.white24),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.divider),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.gold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold,
+                  foregroundColor: AppColors.textOnGold,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onPressed: () {
+                  final box = _boxes[_selectedBoxIndex];
+                  final promptText = _boxPromptController.text.trim();
+                  setState(() {
+                    _selectedStyleUrl = box.imageUrl;
+                    _selectedStyleName = promptText.isNotEmpty
+                        ? 'Kutuda Sunum: ${box.name} (${promptText})'
+                        : 'Kutuda Sunum: ${box.name}';
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Kutulu sunum tarzı ve detayları uygulandı!')),
+                  );
+                },
+                child: const Text('Kutuyu ve Tarifi Uygula', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
+      case 3: // Manken Seçimi
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Mücevherin sergileneceği yapay zeka manken modelini seçin:',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 120,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _models.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    final model = _models[index];
+                    final isSelected = _selectedModelIndex == index;
+
+                    return InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedModelIndex = index;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: 110,
+                        decoration: BoxDecoration(
+                          color: Colors.black26,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected ? AppColors.gold : AppColors.divider,
+                            width: isSelected ? 2 : 1,
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: Image.network(model.imageUrl, fit: BoxFit.cover),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 4),
+                              child: Text(
+                                model.name,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: isSelected ? AppColors.gold : AppColors.textPrimary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 10,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _models[_selectedModelIndex].description,
+                style: const TextStyle(color: AppColors.gold, fontSize: 11, fontStyle: FontStyle.italic),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _modelPromptController,
+                maxLines: 2,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                decoration: InputDecoration(
+                  labelText: 'Manken ve Kadraj Detayları (Prompt)',
+                  labelStyle: const TextStyle(color: AppColors.textSecondary),
+                  hintText: 'Örn: 20\'li yaşlarda İtalyan kadın manken, bej gömlekli, doğal güneş gölgeli...',
+                  hintStyle: const TextStyle(color: Colors.white24),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.divider),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.gold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold,
+                  foregroundColor: AppColors.textOnGold,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onPressed: () {
+                  final model = _models[_selectedModelIndex];
+                  final promptText = _modelPromptController.text.trim();
+                  setState(() {
+                    _selectedStyleUrl = model.imageUrl;
+                    _selectedStyleName = promptText.isNotEmpty
+                        ? 'Yapay Zeka Manken: ${model.name} (${promptText})'
+                        : 'Yapay Zeka Manken: ${model.name}';
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Manken tarzı ve detayları uygulandı!')),
+                  );
+                },
+                child: const Text('Mankeni ve Tarifi Uygula', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
+      case 4: // Tarif Yaz
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -1038,5 +1356,29 @@ class _StylePreset {
     required this.light,
     required this.background,
     required this.mood,
+  });
+}
+
+class _BoxPreset {
+  final String name;
+  final String imageUrl;
+  final String description;
+
+  _BoxPreset({
+    required this.name,
+    required this.imageUrl,
+    required this.description,
+  });
+}
+
+class _ModelPreset {
+  final String name;
+  final String imageUrl;
+  final String description;
+
+  _ModelPreset({
+    required this.name,
+    required this.imageUrl,
+    required this.description,
   });
 }

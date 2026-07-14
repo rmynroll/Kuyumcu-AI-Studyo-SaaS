@@ -441,27 +441,81 @@ class _ComparisonScreenState extends State<ComparisonScreen> {
             ),
           ),
           // Product Ring centered with a drop shadow
-          Center(
-            child: FractionallySizedBox(
-              widthFactor: 0.58,
-              heightFactor: 0.58,
-              child: Container(
-                decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.4),
-                      blurRadius: 24,
-                      spreadRadius: 3,
-                    )
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: _buildSingleImage(productUrl),
+          // Manken ve Kutu pozisyonlama algoritmaları
+          (() {
+            final isBox = styleUrl.contains('box') ||
+                styleUrl.contains('kutu') ||
+                styleUrl.contains('photo-1601121141461') ||
+                styleUrl.contains('photo-1549465220-1a8b9238cd48') ||
+                styleUrl.contains('photo-1512909006721') ||
+                styleUrl.contains('photo-1502239608882');
+            
+            final isHandModel = styleUrl.contains('photo-1602751584552') || styleUrl.contains('model_hand');
+            final isNeckModel = styleUrl.contains('photo-1544816155') || styleUrl.contains('neck') || styleUrl.contains('face');
+
+            double scale = 0.58;
+            Alignment alignment = Alignment.center;
+            Offset shadowOffset = Offset.zero;
+            double shadowBlur = 24.0;
+            double shadowSpread = 3.0;
+            double opacity = 0.35;
+
+            if (isBox) {
+              scale = 0.34;
+              alignment = const Alignment(0.0, 0.1);
+              shadowOffset = const Offset(0, 6);
+              shadowBlur = 12.0;
+              shadowSpread = 1.0;
+              opacity = 0.6;
+            } else if (isHandModel) {
+              scale = 0.16;
+              alignment = const Alignment(0.04, -0.05);
+              shadowOffset = const Offset(1, 2);
+              shadowBlur = 6.0;
+              shadowSpread = 0.5;
+              opacity = 0.45;
+            } else if (isNeckModel) {
+              scale = 0.28;
+              alignment = const Alignment(0.0, 0.38);
+              shadowOffset = const Offset(0, 4);
+              shadowBlur = 12.0;
+              shadowSpread = 1.0;
+              opacity = 0.4;
+            }
+
+            return Center(
+              child: Align(
+                alignment: alignment,
+                child: FractionallySizedBox(
+                  widthFactor: scale,
+                  heightFactor: scale,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(opacity),
+                          blurRadius: shadowBlur,
+                          spreadRadius: shadowSpread,
+                          offset: shadowOffset,
+                        )
+                      ],
+                    ),
+                    // Beyaz/Açık renk arka planı filtre matrisiyle temizleyip
+                    // sadece takıyı bırakıyoruz (Arka Plan Kırpma / Background Keying)
+                    child: ColorFiltered(
+                      colorFilter: const ColorFilter.matrix(<double>[
+                        1, 0, 0, 0, 0,
+                        0, 1, 0, 0, 0,
+                        0, 0, 1, 0, 0,
+                        -1.8, -1.8, -1.8, 5.4, -0.9,
+                      ]),
+                      child: _buildSingleImage(productUrl),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          }()),
         ],
       );
     }
