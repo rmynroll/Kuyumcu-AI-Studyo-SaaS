@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:io' show File;
+import 'dart:js' as js;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'app_colors.dart';
 import 'credits_provider.dart';
+import 'generation_repository.dart';
+import 'generation.dart';
 
 class QaPanelScreen extends ConsumerStatefulWidget {
   const QaPanelScreen({super.key, required this.generationId});
@@ -25,7 +30,15 @@ class _QaPanelScreenState extends ConsumerState<QaPanelScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.generationId == '2') {
+    
+    // Yerel üretim havuzundan verileri çek
+    final gen = GenerationRepository.localGenerations[widget.generationId];
+    if (gen != null) {
+      _isSuccessCase = gen.status != GenerationStatus.failed;
+      _beforeUrl = GenerationRepository.generationBeforeUrls[widget.generationId] ?? '';
+      _afterUrl = gen.outputUrls.firstOrNull?.fileUrl ?? '';
+      _title = GenerationRepository.generationTitles[widget.generationId] ?? 'Özel Tasarım Takı';
+    } else if (widget.generationId == '2') {
       _isSuccessCase = false;
       _beforeUrl = 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?q=80&w=400&auto=format&fit=crop';
       _afterUrl = 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?q=80&w=400&auto=format&fit=crop';
@@ -48,6 +61,112 @@ class _QaPanelScreenState extends ConsumerState<QaPanelScreen> {
       _beforeUrl = 'https://images.unsplash.com/photo-1598560917505-59a3ad559071?q=80&w=400&auto=format&fit=crop';
       _afterUrl = 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=400&auto=format&fit=crop';
       _title = 'Altın Yakut Yüzük';
+    }
+  }
+
+  Widget _buildImageWidget(String path, {required double aspectRatio}) {
+    if (path.startsWith('composite:')) {
+      final paramsStr = path.replaceFirst('composite:', '');
+      final queryParams = Uri.splitQueryString(paramsStr);
+      final productUrl = queryParams['productUrl'] ?? '';
+      final styleUrl = queryParams['styleUrl'] ?? '';
+
+      return AspectRatio(
+        aspectRatio: aspectRatio,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Arka plan şablon görseli
+            _buildSingleImage(styleUrl),
+            // Yumuşak gölgeleme/ışıklandırma katmanı
+            Container(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.35)],
+                  radius: 0.85,
+                ),
+              ),
+            ),
+            // Yerleştirilmiş ürün görseli
+            Center(
+              child: FractionallySizedBox(
+                widthFactor: 0.58,
+                heightFactor: 0.58,
+                child: Container(
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.4),
+                        blurRadius: 24,
+                        spreadRadius: 3,
+                      )
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: _buildSingleImage(productUrl),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return AspectRatio(
+      aspectRatio: aspectRatio,
+      child: _buildSingleImage(path),
+    );
+  }
+
+  Widget _buildSingleImage(String path) {
+    if (path.startsWith('http') || path.startsWith('blob')) {
+      return Image.network(path, fit: BoxFit.cover);
+    } else {
+      if (kIsWeb) {
+        return Image.network(path, fit: BoxFit.cover);
+      } else {
+        return Image.file(File(path), fit: BoxFit.cover);
+      }
+    }
+  }
+
+  void _downloadImage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Görsel indiriliyor...')),
+    );
+
+    String url = _afterUrl;
+    if (url.startsWith('composite:')) {
+      final paramsStr = url.replaceFirst('composite:', '');
+      final queryParams = Uri.splitQueryString(paramsStr);
+      url = queryParams['styleUrl'] ?? 'https://images.unsplash.com/photo-1605100804763-247f67b3557e';
+    }
+
+    if (kIsWeb) {
+      try {
+        js.context.callMethod('eval', [
+          "var a = document.createElement('a'); a.href = '$url'; a.download = 'kuyumcu-ai-studyo.jpg'; document.body.appendChild(a); a.click(); document.body.removeChild(a);"
+        ]);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: AppColors.success,
+            content: Text('İndirme başlatıldı!'),
+          ),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Web indirme hatası: $e')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: AppColors.success,
+          content: Text('Görsel başarıyla galeriye kaydedildi! (Simüle edildi)'),
+        ),
+      );
     }
   }
 
@@ -110,10 +229,7 @@ class _QaPanelScreenState extends ConsumerState<QaPanelScreen> {
                             const SizedBox(height: 8),
                             ClipRRect(
                               borderRadius: BorderRadius.circular(16),
-                              child: AspectRatio(
-                                aspectRatio: 1.2,
-                                child: Image.network(_beforeUrl, fit: BoxFit.cover),
-                              ),
+                              child: _buildImageWidget(_beforeUrl, aspectRatio: 1.2),
                             ),
                           ],
                         ),
@@ -129,10 +245,7 @@ class _QaPanelScreenState extends ConsumerState<QaPanelScreen> {
                             const SizedBox(height: 8),
                             ClipRRect(
                               borderRadius: BorderRadius.circular(16),
-                              child: AspectRatio(
-                                aspectRatio: 1.2,
-                                child: Image.network(_afterUrl, fit: BoxFit.cover),
-                              ),
+                              child: _buildImageWidget(_afterUrl, aspectRatio: 1.2),
                             ),
                           ],
                         ),
@@ -210,10 +323,22 @@ class _QaPanelScreenState extends ConsumerState<QaPanelScreen> {
 
                   // 4. AKSİYON BUTONLARI
                   if (_isSuccessCase) ...[
-                    ElevatedButton(
+                    ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.gold,
                         foregroundColor: AppColors.textOnGold,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        minimumSize: const Size.fromHeight(56),
+                      ),
+                      onPressed: _downloadImage,
+                      icon: const Icon(Icons.download_rounded, color: AppColors.textOnGold),
+                      label: const Text('Görseli İndir', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.surfaceElevated,
+                        foregroundColor: AppColors.textPrimary,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         minimumSize: const Size.fromHeight(56),
                       ),
@@ -351,7 +476,6 @@ class _QaPanelScreenState extends ConsumerState<QaPanelScreen> {
         badgeLabel = 'DÜŞÜK';
         break;
       case _QaStatus.error:
-      default:
         statusColor = AppColors.error;
         icon = Icons.cancel_outlined;
         badgeLabel = 'SAPMA';

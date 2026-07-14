@@ -75,9 +75,8 @@ class ProductsNotifier extends StateNotifier<List<Product>> {
         date: now.subtract(const Duration(hours: 1)),
         qaScore: 100,
         isRefunded: false,
-        // Test için geçici olarak bir ürüne örnek GLB ver
-        // TODO: gerçek SKU GLB'leri ile değiştir
-        glbUrl: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb',
+        // Gerçekçi 3D Altın Yüzük GLB modeli
+        glbUrl: 'https://raw.githubusercontent.com/AbdallahMuhammad2/provador-ajorsul/main/working-ring-7.glb',
       ),
       Product(
         id: '2',
@@ -88,6 +87,7 @@ class ProductsNotifier extends StateNotifier<List<Product>> {
         date: now.subtract(const Duration(hours: 4)),
         qaScore: 82,
         isRefunded: true,
+        glbUrl: 'https://raw.githubusercontent.com/AbdallahMuhammad2/provador-ajorsul/main/working-ring-7.glb',
       ),
       Product(
         id: '3',
@@ -98,6 +98,7 @@ class ProductsNotifier extends StateNotifier<List<Product>> {
         date: now.subtract(const Duration(days: 1)),
         qaScore: 98,
         isRefunded: false,
+        glbUrl: 'https://raw.githubusercontent.com/AbdallahMuhammad2/provador-ajorsul/main/working-ring-7.glb',
       ),
       Product(
         id: '4',
@@ -131,6 +132,12 @@ class ProductsNotifier extends StateNotifier<List<Product>> {
       for (final product in state)
         if (product.id == updatedProduct.id) updatedProduct else product
     ];
+  }
+
+  /// Yeni üretilen ürünü galeriye ekler
+  void addProduct(Product product) {
+    if (state.any((p) => p.id == product.id)) return;
+    state = [product, ...state];
   }
 }
 

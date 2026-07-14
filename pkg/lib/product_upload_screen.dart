@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:kuyumcu_flutter/app_colors.dart';
 import 'package:kuyumcu_flutter/ai_generation_service.dart';
+import 'package:kuyumcu_flutter/generation_repository.dart';
 
 class ProductUploadScreen extends ConsumerStatefulWidget {
   const ProductUploadScreen({super.key});
@@ -113,37 +114,20 @@ class _ProductUploadScreenState extends ConsumerState<ProductUploadScreen> {
 
     final finalPrompt = 'Ürün: $name, Tür: $_selectedType, Metal: $_selectedMetal, Taş: $_selectedStone. ${_promptController.text.trim()}';
 
-    bool isSuccess = false;
-    if (kIsWeb) {
-      // Simulate success in web browser demo environment
-      await Future.delayed(const Duration(seconds: 1500 ~/ 1000));
-      isSuccess = true;
-    } else {
-      try {
-        final service = AiGenerationService();
-        isSuccess = await service.generateImage(File(_selectedImagePath!), finalPrompt);
-      } catch (e) {
-        isSuccess = false;
-      }
-    }
+    // Görsel üretim işini yerel repoda oluştur
+    final repo = ref.read(generationRepositoryProvider);
+    final gen = await repo.createFromTemplate(
+      productId: _selectedImagePath!,
+      templateId: 'white_background', // Varsayılan arka plan şablonu
+    );
 
     if (mounted) Navigator.pop(context); // Close loading dialog
 
-    if (isSuccess && mounted) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Ürün başarıyla kaydedildi ve stüdyoya gönderildi!')),
       );
-      
-      // Navigate to progress/results or back to dashboard
-      final genId = DateTime.now().millisecondsSinceEpoch.toString();
-      context.go('/generation/progress/$genId');
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Görsel gönderilirken sunucu hatası oluştu.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      context.go('/generation/progress/${gen.id}');
     }
   }
 

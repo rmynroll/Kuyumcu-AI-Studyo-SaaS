@@ -24,6 +24,7 @@ import 'package:kuyumcu_flutter/api_keys_screen.dart';
 import 'package:kuyumcu_flutter/support_help_screen.dart';
 import 'package:kuyumcu_flutter/about_screen.dart';
 import 'package:kuyumcu_flutter/product_3d_viewer_screen.dart';
+import 'package:kuyumcu_flutter/results_gallery_screen.dart';
 
 /// Uygulamanın tüm route'ları tek yerde tanımlanır.
 ///
@@ -201,7 +202,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
-      // TODO: /results
+      GoRoute(
+        path: '/results',
+        builder: (context, state) => const ResultsGalleryScreen(),
+      ),
     ],
   );
 });

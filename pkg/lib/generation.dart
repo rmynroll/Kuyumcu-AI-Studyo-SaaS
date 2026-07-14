@@ -32,22 +32,23 @@ extension GenerationStatusX on GenerationStatus {
 
   bool get isInProgress => !isTerminal;
 
-  /// Kullanıcıya gösterilecek sade, tek kelimelik durum metni.
-  /// Ara aşamalar (analyzing_product, removing_background vb.) kasıtlı
-  /// olarak tek bir "Hazırlanıyor" mesajında toplanır — kuyumcuya pipeline
-  /// detayı gösterilmez.
   String get userLabel {
     switch (this) {
       case GenerationStatus.pending:
       case GenerationStatus.queued:
-        return 'Sırada';
+        return 'Sıraya alınıyor...';
       case GenerationStatus.processing:
+        return 'İşleme başlandı...';
       case GenerationStatus.analyzingProduct:
+        return 'Ürün detayları analiz ediliyor...';
       case GenerationStatus.removingBackground:
+        return 'Ürün arka plandan ayrılıyor (SAM 2)...';
       case GenerationStatus.generatingScene:
+        return 'Yapay zeka ile stüdyo sahnesi kuruluyor...';
       case GenerationStatus.compositingProduct:
+        return 'Işık, gölge ve yansımalar birleştiriliyor...';
       case GenerationStatus.qualityChecking:
-        return 'Hazırlanıyor';
+        return 'Ürün sadakat kontrolü yapılıyor (QA)...';
       case GenerationStatus.completed:
         return 'Tamamlandı';
       case GenerationStatus.failed:

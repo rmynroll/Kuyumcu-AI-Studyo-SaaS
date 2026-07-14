@@ -1,17 +1,19 @@
 import 'dart:io';
-import 'ai_generation_service.dart'; // Dosya yoluna göre düzenleyebilirsin
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:kuyumcu_flutter/generation_repository.dart';
 
-class PhotoUploadWidget extends StatefulWidget {
+class PhotoUploadWidget extends ConsumerStatefulWidget {
   const PhotoUploadWidget({super.key});
 
   @override
-  State<PhotoUploadWidget> createState() => _PhotoUploadWidgetState();
+  ConsumerState<PhotoUploadWidget> createState() => _PhotoUploadWidgetState();
 }
 
-class _PhotoUploadWidgetState extends State<PhotoUploadWidget> {
+class _PhotoUploadWidgetState extends ConsumerState<PhotoUploadWidget> {
   File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _promptController = TextEditingController();
@@ -26,7 +28,7 @@ class _PhotoUploadWidgetState extends State<PhotoUploadWidget> {
     }
   }
 
- void _startGeneration() async {
+  void _startGeneration() async {
     if (_selectedImage == null) return;
     
     String customPrompt = _promptController.text;
@@ -40,25 +42,33 @@ class _PhotoUploadWidgetState extends State<PhotoUploadWidget> {
       ),
     );
 
-    // 2. Ayrı dosyada yazdığımız servisi çağır
-    final service = AiGenerationService();
-    final isSuccess = await service.generateImage(_selectedImage!, customPrompt);
+    // 2. Prompt kelimelerine göre gerçekçi arka plan şablonunu belirle
+    final prompt = customPrompt.toLowerCase();
+    String styleUrl = 'https://images.unsplash.com/photo-1533090161767-e6ffed986c88?q=80&w=400&auto=format&fit=crop'; // Varsayılan: Lüks İtalyan Mermer
+    if (prompt.contains('kadife') || prompt.contains('kutusu') || prompt.contains('box') || prompt.contains('velvet') || prompt.contains('siyah') || prompt.contains('black')) {
+      styleUrl = 'https://images.unsplash.com/photo-1502239608882-93b729c6af43?q=80&w=400&auto=format&fit=crop'; // Siyah Kadife/Doku
+    } else if (prompt.contains('el') || prompt.contains('parmak') || prompt.contains('hand') || prompt.contains('finger') || prompt.contains('manken') || prompt.contains('model')) {
+      styleUrl = 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?q=80&w=400&auto=format&fit=crop'; // Manken Eli (Yüzük)
+    } else if (prompt.contains('ışık') || prompt.contains('güneş') || prompt.contains('sun') || prompt.contains('light') || prompt.contains('gün')) {
+      styleUrl = 'https://images.unsplash.com/photo-1541123437800-1bb1317badc2?q=80&w=400&auto=format&fit=crop'; // Doğal Gün Işığı Taş
+    }
 
-    // 3. İşlem bitince yükleniyor animasyonunu kapat
-    if (context.mounted) Navigator.pop(context);
+    // 3. Görsel üretim işini repoda oluştur
+    final repo = ref.read(generationRepositoryProvider);
+    final gen = await repo.createFromTemplate(
+      productId: _selectedImage!.path,
+      templateId: styleUrl,
+    );
 
-    // 4. Go sunucusundan gelen sonuca göre kullanıcıya mesaj göster
-    if (isSuccess && context.mounted) {
+    // 4. İşlem bitince yükleniyor animasyonunu kapat
+    if (mounted) Navigator.pop(context);
+
+    // 5. Üretim izleme ekranına yönlendir
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Görsel başarıyla yapay zekaya iletildi!')),
       );
-    } else if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Üretim sırasında sunucu hatası oluştu.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      context.go('/generation/progress/${gen.id}');
     }
   }
 
@@ -79,13 +89,13 @@ class _PhotoUploadWidgetState extends State<PhotoUploadWidget> {
           decoration: BoxDecoration(
             color: Colors.grey[900],
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFFD4AF37), width: 1), // Altın rengi çerçeve
+            border: Border.all(color: const Color(0xFFFFD4AF37), width: 1), // Altın çerçeve
           ),
           child: _selectedImage != null
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: kIsWeb 
-                      ? Image.network(_selectedImage!.path, fit: BoxFit.cover) // Web'de test ederken çökmemesi için
+                      ? Image.network(_selectedImage!.path, fit: BoxFit.cover) 
                       : Image.file(_selectedImage!, fit: BoxFit.cover),
                 )
               : const Center(

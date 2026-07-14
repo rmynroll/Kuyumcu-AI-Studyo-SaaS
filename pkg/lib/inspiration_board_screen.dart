@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'app_colors.dart';
 import 'credits_provider.dart';
+import 'generation_repository.dart';
 
 class InspirationBoardScreen extends ConsumerStatefulWidget {
   final int? initialTab;
@@ -66,21 +67,21 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
   final List<_StylePreset> _presets = [
     _StylePreset(
       name: 'Lüks İtalyan',
-      imageUrl: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=400&auto=format&fit=crop',
+      imageUrl: 'https://images.unsplash.com/photo-1533090161767-e6ffed986c88?q=80&w=400&auto=format&fit=crop',
       light: 'Yumuşak Çapraz Işık, Yüksek Dinamik Aralık (HDR)',
       background: 'Cilalı Beyaz Mermer ve Altın Vurgular',
       mood: 'Sıcak & Lüks Akdeniz Esintisi (%94 Kararlılık)',
     ),
     _StylePreset(
       name: 'Doğal Gün Işığı',
-      imageUrl: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?q=80&w=400&auto=format&fit=crop',
+      imageUrl: 'https://images.unsplash.com/photo-1541123437800-1bb1317badc2?q=80&w=400&auto=format&fit=crop',
       light: 'Yanal Gün Işığı, Yaprak Gölgeleri Efekti',
       background: 'Rustik Meşe Ağacı Zemin',
       mood: 'Minimalist & Doğal Atmosfer (%91 Kararlılık)',
     ),
     _StylePreset(
       name: 'Siyah Kadife',
-      imageUrl: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=400&auto=format&fit=crop',
+      imageUrl: 'https://images.unsplash.com/photo-1502239608882-93b729c6af43?q=80&w=400&auto=format&fit=crop',
       light: 'Spot Tepe Işığı, Yüksek Kontrastlı Yansıma',
       background: 'Koyu Kadife Zemin',
       mood: 'Gizemli & Dramatik Lüks (%96 Kararlılık)',
@@ -269,13 +270,30 @@ class _InspirationBoardScreenState extends ConsumerState<InspirationBoardScreen>
       ),
     );
 
-    // Simulate backend job scheduling
-    await Future.delayed(const Duration(seconds: 1200 ~/ 1000));
+    // Görsel üretim işini yerel repoda oluştur
+    final repo = ref.read(generationRepositoryProvider);
+    String styleId = _selectedStyleUrl!;
+    if (styleId == 'prompt_mode') {
+      final prompt = _stylePromptController.text.toLowerCase();
+      styleId = 'https://images.unsplash.com/photo-1533090161767-e6ffed986c88?q=80&w=400&auto=format&fit=crop'; // Varsayılan: Mermer
+      if (prompt.contains('kadife') || prompt.contains('kutusu') || prompt.contains('box') || prompt.contains('velvet') || prompt.contains('siyah') || prompt.contains('black')) {
+        styleId = 'https://images.unsplash.com/photo-1502239608882-93b729c6af43?q=80&w=400&auto=format&fit=crop';
+      } else if (prompt.contains('el') || prompt.contains('parmak') || prompt.contains('hand') || prompt.contains('finger') || prompt.contains('manken') || prompt.contains('model')) {
+        styleId = 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?q=80&w=400&auto=format&fit=crop';
+      } else if (prompt.contains('ışık') || prompt.contains('güneş') || prompt.contains('sun') || prompt.contains('light') || prompt.contains('gün')) {
+        styleId = 'https://images.unsplash.com/photo-1541123437800-1bb1317badc2?q=80&w=400&auto=format&fit=crop';
+      }
+    }
+
+    final gen = await repo.createFromTemplate(
+      productId: _selectedProductUrl!,
+      templateId: styleId,
+      aspectRatio: _selectedRatio,
+    );
     
     if (context.mounted) {
       Navigator.pop(context); // Close loading
-      final genId = DateTime.now().millisecondsSinceEpoch.toString();
-      context.go('/generation/progress/$genId'); // Navigate to progress tracking screen
+      context.go('/generation/progress/${gen.id}'); // Navigate to progress tracking screen
     }
   }
 

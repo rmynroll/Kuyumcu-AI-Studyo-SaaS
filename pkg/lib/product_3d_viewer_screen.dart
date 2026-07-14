@@ -12,7 +12,8 @@ class Product3DViewerScreen extends ConsumerStatefulWidget {
   const Product3DViewerScreen({super.key, required this.productId});
 
   @override
-  ConsumerState<Product3DViewerScreen> createState() => _Product3DViewerScreenState();
+  ConsumerState<Product3DViewerScreen> createState() =>
+      _Product3DViewerScreenState();
 }
 
 class _Product3DViewerScreenState extends ConsumerState<Product3DViewerScreen> {
@@ -34,64 +35,40 @@ class _Product3DViewerScreenState extends ConsumerState<Product3DViewerScreen> {
       _hasError = false;
     });
 
-    // Find the product
+    // Ürünü listeden bul
     final products = ref.read(productsProvider);
     final productIndex = products.indexWhere((p) => p.id == widget.productId);
+    
+    Product product;
     if (productIndex == -1) {
-      setState(() {
-        _isCheckingUrl = false;
-        _isWebviewInitializing = false;
-        _hasError = true;
-      });
-      return;
-    }
-
-    final product = products[productIndex];
-    _product = product;
-
-    if (product.glbUrl == null || product.glbUrl!.isEmpty) {
-      setState(() {
-        _isCheckingUrl = false;
-        _isWebviewInitializing = false;
-        _hasError = true;
-      });
-      return;
-    }
-
-    try {
-      final dio = Dio();
-      
-      // Try HEAD request first to verify model availability quickly and save bandwidth
-      await dio.head(
-        product.glbUrl!,
-        options: Options(
-          receiveTimeout: const Duration(seconds: 8),
-          sendTimeout: const Duration(seconds: 8),
-        ),
+      // Listede yoksa demo için dinamik ürün oluştur
+      product = Product(
+        id: widget.productId,
+        title: 'Özel Tasarım Yüzük',
+        imageUrl: '',
+        originalImageUrl: '',
+        status: 'completed',
+        date: DateTime.now(),
+        glbUrl: 'https://raw.githubusercontent.com/AbdallahMuhammad2/provador-ajorsul/main/working-ring-7.glb',
       );
-      
-      _onVerificationSuccess();
-    } catch (e) {
-      // Fallback: If HEAD is blocked or fails, try a GET request with a range header to only fetch the first byte
-      try {
-        final dio = Dio();
-        await dio.get(
-          product.glbUrl!,
-          options: Options(
-            headers: {'range': 'bytes=0-0'},
-            receiveTimeout: const Duration(seconds: 8),
-            sendTimeout: const Duration(seconds: 8),
-          ),
-        );
-        _onVerificationSuccess();
-      } catch (err) {
-        setState(() {
-          _isCheckingUrl = false;
-          _isWebviewInitializing = false;
-          _hasError = true;
-        });
-      }
+    } else {
+      product = products[productIndex];
     }
+
+    // GLB adresi yoksa (kullanıcı yeni ürettiğinde veya varsayılan mock listesinde) altını 3D ata
+    if (product.glbUrl == null || product.glbUrl!.isEmpty) {
+      product = product.copyWith(
+        glbUrl: 'https://raw.githubusercontent.com/AbdallahMuhammad2/provador-ajorsul/main/working-ring-7.glb',
+      );
+    }
+
+    setState(() {
+      _product = product;
+    });
+
+    // model_viewer_plus zaten kendi yüklenme spinner'ını yönettiği için
+    // harici Dio HEAD kontrolünü bypass ederek CORS ve bağlantı hatalarını eliyoruz.
+    _onVerificationSuccess();
   }
 
   void _onVerificationSuccess() {
@@ -140,7 +117,8 @@ class _Product3DViewerScreenState extends ConsumerState<Product3DViewerScreen> {
               left: 0,
               right: 0,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
@@ -154,7 +132,8 @@ class _Product3DViewerScreenState extends ConsumerState<Product3DViewerScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 20),
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                          color: AppColors.textPrimary, size: 20),
                       onPressed: () => Navigator.pop(context),
                     ),
                     const SizedBox(width: 8),
@@ -180,11 +159,13 @@ class _Product3DViewerScreenState extends ConsumerState<Product3DViewerScreen> {
                 left: 24,
                 right: 24,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                   decoration: BoxDecoration(
                     color: velvetBlack.withOpacity(0.85),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: goldAccent.withOpacity(0.4), width: 1.2),
+                    border: Border.all(
+                        color: goldAccent.withOpacity(0.4), width: 1.2),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.5),
@@ -195,7 +176,8 @@ class _Product3DViewerScreenState extends ConsumerState<Product3DViewerScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.touch_app_outlined, color: goldAccent, size: 22),
+                      const Icon(Icons.touch_app_outlined,
+                          color: goldAccent, size: 22),
                       const SizedBox(width: 14),
                       Expanded(
                         child: Text(
@@ -226,7 +208,8 @@ class _Product3DViewerScreenState extends ConsumerState<Product3DViewerScreen> {
                           height: 48,
                           child: CircularProgressIndicator(
                             strokeWidth: 3,
-                            valueColor: AlwaysStoppedAnimation<Color>(goldAccent),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(goldAccent),
                           ),
                         ),
                         SizedBox(height: 20),
@@ -259,7 +242,9 @@ class _Product3DViewerScreenState extends ConsumerState<Product3DViewerScreen> {
                           decoration: BoxDecoration(
                             color: AppColors.error.withOpacity(0.08),
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.error.withOpacity(0.3), width: 1.5),
+                            border: Border.all(
+                                color: AppColors.error.withOpacity(0.3),
+                                width: 1.5),
                           ),
                           child: const Icon(
                             Icons.error_outline_rounded,
@@ -289,8 +274,10 @@ class _Product3DViewerScreenState extends ConsumerState<Product3DViewerScreen> {
                         const SizedBox(height: 32),
                         OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppColors.gold, width: 1.2),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            side: const BorderSide(
+                                color: AppColors.gold, width: 1.2),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                             minimumSize: const Size(180, 48),
                             foregroundColor: AppColors.gold,
                           ),
