@@ -15,3 +15,7 @@ Thumbs.db
 # IDE files
 .vscode/
 .idea/
+
+# Uploads and temporary test files
+/uploads/
+/internal/ai/uploads/
